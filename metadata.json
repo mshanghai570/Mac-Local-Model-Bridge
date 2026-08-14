@@ -1,0 +1,8 @@
+{
+  "name": "Remix Mac Local AI Gateway for iPhone",
+  "description": "Production-quality local AI gateway running on Mac with MCP interface, OpenAI-compatible HTTP API, native SSE streaming, Bonjour discovery, model aliases, session persistence, and iOS client integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

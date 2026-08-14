@@ -1,0 +1,550 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		110000012C1A000100000001 /* MacLocalModelBridgeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */; };
+		110000022C1A000100000001 /* BridgeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000022C1A000100000001 /* BridgeModel.swift */; };
+		110000032C1A000100000001 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000032C1A000100000001 /* ChatMessage.swift */; };
+		110000042C1A000100000001 /* MCPMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000042C1A000100000001 /* MCPMessage.swift */; };
+		110000052C1A000100000001 /* BonjourDiscoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000052C1A000100000001 /* BonjourDiscoveryManager.swift */; };
+		110000062C1A000100000001 /* BridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000062C1A000100000001 /* BridgeClient.swift */; };
+		110000072C1A000100000001 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000072C1A000100000001 /* SettingsManager.swift */; };
+		110000082C1A000100000001 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000082C1A000100000001 /* ChatViewModel.swift */; };
+		110000092C1A000100000001 /* McpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000092C1A000100000001 /* McpViewModel.swift */; };
+		1100000A2C1A000100000001 /* ModelsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000A2C1A000100000001 /* ModelsViewModel.swift */; };
+		1100000B2C1A000100000001 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000B2C1A000100000001 /* ChatView.swift */; };
+		1100000C2C1A000100000001 /* McpInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000C2C1A000100000001 /* McpInspectorView.swift */; };
+		1100000D2C1A000100000001 /* ModelsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000D2C1A000100000001 /* ModelsListView.swift */; };
+		1100000E2C1A000100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000E2C1A000100000001 /* SettingsView.swift */; };
+		1100000F2C1A000100000001 /* MessageBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200000F2C1A000100000001 /* MessageBubbleView.swift */; };
+		110000102C1A000100000001 /* TelemetryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000102C1A000100000001 /* TelemetryHeaderView.swift */; };
+		110000112C1A000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 220000112C1A000100000001 /* Assets.xcassets */; };
+		110000122C1A000100000001 /* MacLocalModelBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA0000012C1A000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 770000012C1A000100000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 660000012C1A000100000001;
+			remoteInfo = MacLocalModelBridge;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		330000012C1A000100000001 /* MacLocalModelBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacLocalModelBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		330000022C1A000100000001 /* MacLocalModelBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacLocalModelBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLocalModelBridgeApp.swift; sourceTree = "<group>"; };
+		220000022C1A000100000001 /* BridgeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModel.swift; sourceTree = "<group>"; };
+		220000032C1A000100000001 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		220000042C1A000100000001 /* MCPMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPMessage.swift; sourceTree = "<group>"; };
+		220000052C1A000100000001 /* BonjourDiscoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BonjourDiscoveryManager.swift; sourceTree = "<group>"; };
+		220000062C1A000100000001 /* BridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeClient.swift; sourceTree = "<group>"; };
+		220000072C1A000100000001 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsManager.swift; sourceTree = "<group>"; };
+		220000082C1A000100000001 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		220000092C1A000100000001 /* McpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = McpViewModel.swift; sourceTree = "<group>"; };
+		2200000A2C1A000100000001 /* ModelsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsViewModel.swift; sourceTree = "<group>"; };
+		2200000B2C1A000100000001 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		2200000C2C1A000100000001 /* McpInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = McpInspectorView.swift; sourceTree = "<group>"; };
+		2200000D2C1A000100000001 /* ModelsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelsListView.swift; sourceTree = "<group>"; };
+		2200000E2C1A000100000001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2200000F2C1A000100000001 /* MessageBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleView.swift; sourceTree = "<group>"; };
+		220000102C1A000100000001 /* TelemetryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryHeaderView.swift; sourceTree = "<group>"; };
+		220000112C1A000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLocalModelBridgeTests.swift; sourceTree = "<group>"; };
+		220000132C1A000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		220000142C1A000100000001 /* MacLocalModelBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacLocalModelBridge.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		440000012C1A000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		440000022C1A000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		550000012C1A000100000001 /* Main Group */ = {
+			isa = PBXGroup;
+			children = (
+				550000022C1A000100000001 /* MacLocalModelBridge */,
+				550000082C1A000100000001 /* MacLocalModelBridgeTests */,
+				550000092C1A000100000001 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		550000022C1A000100000001 /* MacLocalModelBridge */ = {
+			isa = PBXGroup;
+			children = (
+				220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */,
+				550000032C1A000100000001 /* Models */,
+				550000042C1A000100000001 /* Services */,
+				550000052C1A000100000001 /* ViewModels */,
+				550000062C1A000100000001 /* Views */,
+				220000112C1A000100000001 /* Assets.xcassets */,
+				220000132C1A000100000001 /* Info.plist */,
+				220000142C1A000100000001 /* MacLocalModelBridge.entitlements */,
+			);
+			path = MacLocalModelBridge;
+			sourceTree = "<group>";
+		};
+		550000032C1A000100000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				220000022C1A000100000001 /* BridgeModel.swift */,
+				220000032C1A000100000001 /* ChatMessage.swift */,
+				220000042C1A000100000001 /* MCPMessage.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		550000042C1A000100000001 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				220000052C1A000100000001 /* BonjourDiscoveryManager.swift */,
+				220000062C1A000100000001 /* BridgeClient.swift */,
+				220000072C1A000100000001 /* SettingsManager.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		550000052C1A000100000001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				220000082C1A000100000001 /* ChatViewModel.swift */,
+				220000092C1A000100000001 /* McpViewModel.swift */,
+				2200000A2C1A000100000001 /* ModelsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		550000062C1A000100000001 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				2200000B2C1A000100000001 /* ChatView.swift */,
+				2200000C2C1A000100000001 /* McpInspectorView.swift */,
+				2200000D2C1A000100000001 /* ModelsListView.swift */,
+				2200000E2C1A000100000001 /* SettingsView.swift */,
+				550000072C1A000100000001 /* Components */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		550000072C1A000100000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				2200000F2C1A000100000001 /* MessageBubbleView.swift */,
+				220000102C1A000100000001 /* TelemetryHeaderView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		550000082C1A000100000001 /* MacLocalModelBridgeTests */ = {
+			isa = PBXGroup;
+			children = (
+				220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */,
+			);
+			path = MacLocalModelBridgeTests;
+			sourceTree = "<group>";
+		};
+		550000092C1A000100000001 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				330000012C1A000100000001 /* MacLocalModelBridge.app */,
+				330000022C1A000100000001 /* MacLocalModelBridgeTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		660000012C1A000100000001 /* MacLocalModelBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC0000012C1A000100000001 /* Build configuration list for PBXNativeTarget "MacLocalModelBridge" */;
+			buildPhases = (
+				990000012C1A000100000001 /* Sources */,
+				440000012C1A000100000001 /* Frameworks */,
+				880000012C1A000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacLocalModelBridge;
+			productName = MacLocalModelBridge;
+			productReference = 330000012C1A000100000001 /* MacLocalModelBridge.app */;
+			productType = "com.apple.product-type.application";
+		};
+		660000022C1A000100000001 /* MacLocalModelBridgeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CC0000022C1A000100000001 /* Build configuration list for PBXNativeTarget "MacLocalModelBridgeTests" */;
+			buildPhases = (
+				990000022C1A000100000001 /* Sources */,
+				440000022C1A000100000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA0000022C1A000100000001 /* PBXTargetDependency */,
+			);
+			name = MacLocalModelBridgeTests;
+			productName = MacLocalModelBridgeTests;
+			productReference = 330000022C1A000100000001 /* MacLocalModelBridgeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		770000012C1A000100000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					660000012C1A000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					660000022C1A000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+						TestTargetID = 660000012C1A000100000001;
+					};
+				};
+			};
+			buildConfigurationList = CC0000032C1A000100000001 /* Build configuration list for PBXProject "MacLocalModelBridge" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 550000012C1A000100000001 /* Main Group */;
+			productRefGroup = 550000092C1A000100000001 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				660000012C1A000100000001 /* MacLocalModelBridge */,
+				660000022C1A000100000001 /* MacLocalModelBridgeTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		880000012C1A000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				110000112C1A000100000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		990000012C1A000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				110000012C1A000100000001 /* MacLocalModelBridgeApp.swift in Sources */,
+				110000022C1A000100000001 /* BridgeModel.swift in Sources */,
+				110000032C1A000100000001 /* ChatMessage.swift in Sources */,
+				110000042C1A000100000001 /* MCPMessage.swift in Sources */,
+				110000052C1A000100000001 /* BonjourDiscoveryManager.swift in Sources */,
+				110000062C1A000100000001 /* BridgeClient.swift in Sources */,
+				110000072C1A000100000001 /* SettingsManager.swift in Sources */,
+				110000082C1A000100000001 /* ChatViewModel.swift in Sources */,
+				110000092C1A000100000001 /* McpViewModel.swift in Sources */,
+				1100000A2C1A000100000001 /* ModelsViewModel.swift in Sources */,
+				1100000B2C1A000100000001 /* ChatView.swift in Sources */,
+				1100000C2C1A000100000001 /* McpInspectorView.swift in Sources */,
+				1100000D2C1A000100000001 /* ModelsListView.swift in Sources */,
+				1100000E2C1A000100000001 /* SettingsView.swift in Sources */,
+				1100000F2C1A000100000001 /* MessageBubbleView.swift in Sources */,
+				110000102C1A000100000001 /* TelemetryHeaderView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		990000022C1A000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				110000122C1A000100000001 /* MacLocalModelBridgeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000022C1A000100000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 660000012C1A000100000001 /* MacLocalModelBridge */;
+			targetProxy = AA0000012C1A000100000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		BB0000012C1A000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDEFINED_VARIABLES = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BB0000022C1A000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDEFINED_VARIABLES = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BB0000032C1A000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacLocalModelBridge/MacLocalModelBridge.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacLocalModelBridge/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "LM Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localai.MacLocalModelBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BB0000042C1A000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = MacLocalModelBridge/MacLocalModelBridge.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacLocalModelBridge/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "LM Bridge";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localai.MacLocalModelBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		BB0000052C1A000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localai.MacLocalModelBridgeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacLocalModelBridge.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MacLocalModelBridge";
+			};
+			name = Debug;
+		};
+		BB0000062C1A000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.localai.MacLocalModelBridgeTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacLocalModelBridge.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MacLocalModelBridge";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CC0000012C1A000100000001 /* Build configuration list for PBXNativeTarget "MacLocalModelBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000032C1A000100000001 /* Debug */,
+				BB0000042C1A000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CC0000022C1A000100000001 /* Build configuration list for PBXNativeTarget "MacLocalModelBridgeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000052C1A000100000001 /* Debug */,
+				BB0000062C1A000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CC0000032C1A000100000001 /* Build configuration list for PBXProject "MacLocalModelBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000012C1A000100000001 /* Debug */,
+				BB0000022C1A000100000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 770000012C1A000100000001 /* Project object */;
+}
