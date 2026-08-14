@@ -15,3 +15,6 @@ local_ai_gateway.egg-info/
 *.pyc
 MacLocalModelBridge-unsigned.ipa
 data/
+ios/.build/
+*.swp
+*~
