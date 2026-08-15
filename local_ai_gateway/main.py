@@ -65,14 +65,16 @@ def run_doctor() -> int:
             if health.provider_status == "connected":
                 print(f"[✓] {health.provider_name} status: CONNECTED")
                 print(f"    Available models: {health.available_models}")
-                
+
                 models = await provider.list_models()
                 if models:
                     print("    Installed models on Mac:")
                     for m in models:
                         caps = []
-                        if m.capabilities.vision: caps.append("vision")
-                        if m.capabilities.tools: caps.append("tools")
+                        if m.capabilities.vision:
+                            caps.append("vision")
+                        if m.capabilities.tools:
+                            caps.append("tools")
                         cap_str = f" [{', '.join(caps)}]" if caps else ""
                         print(f"      - {m.name} ({m.size_formatted}){cap_str}")
                 else:
@@ -99,6 +101,10 @@ def run_doctor() -> int:
     print(f"  Auth Enabled:  {auth_desc}")
     print(f"  Pairing Code:  {pairing_desc}")
 
+    firewall_ok = _check_macos_firewall()
+    if not firewall_ok:
+        all_passed = False
+
     print("\n" + "=" * 60)
     if all_passed:
         print("  ✓ All diagnostic checks PASSED. Gateway is ready to run.")
@@ -107,6 +113,49 @@ def run_doctor() -> int:
     else:
         print("  ! Some checks failed or require attention. See above for details.")
         return 1
+
+
+def _check_macos_firewall() -> bool:
+    """Check whether the macOS Application Firewall is enabled and whether python3 is allowed."""
+    import shutil
+    import subprocess
+
+    socketfilterfw = "/usr/libexec/ApplicationFirewall/socketfilterfw"
+    if not os.path.exists(socketfilterfw):
+        print("\n[!] macOS Application Firewall status: unable to inspect (command not found).")
+        print("    Remedy: open System Settings > Network > Firewall and allow incoming connections for Terminal and python3.")
+        return False
+
+    try:
+        state = subprocess.check_output([socketfilterfw, "--getglobalstate"], text=True).strip()
+    except subprocess.CalledProcessError as e:
+        print(f"\n[✗] Failed to query firewall state: {e}")
+        return False
+
+    enabled = "enabled" in state.lower()
+    print(f"\n[{'✓' if enabled else 'i'}] macOS Firewall: {state}")
+
+    if not enabled:
+        return True
+
+    try:
+        listing = subprocess.check_output([socketfilterfw, "--listapps"], text=True)
+    except subprocess.CalledProcessError as e:
+        print(f"\n[✗] Failed to list firewall apps: {e}")
+        return False
+
+    python3_allowed = (
+        "python3" in listing
+        and "Allow" in listing
+    )
+    if python3_allowed:
+        print("  ✓ python3 appears allowed through the firewall.")
+        return True
+
+    print("  ✗ python3 is NOT explicitly allowed through the firewall.")
+    print("    Remedy: open System Settings > Network > Firewall > Options")
+    print("            and allow incoming connections for Terminal (or your shell app) and python3.")
+    return False
 
 def run_test(prompt: str = "Explain quantum computing in one short sentence.") -> int:
     """Executes a quick live inference completion test."""

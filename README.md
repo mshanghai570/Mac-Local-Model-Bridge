@@ -198,15 +198,53 @@ The gateway is built with **zero-configuration defaults**—it starts immediatel
 
 If your iPhone cannot connect to `http://YOUR_MAC_IP:8080`:
 
-1. **Verify same Wi-Fi network**: Ensure your Mac and iPhone are connected to the same Wi-Fi network (and not on separate guest networks or cellular).
-2. **Check macOS Firewall**:
-   * Open **System Settings** → **Network** → **Firewall**.
-   * If Firewall is ON, click **Options...** and ensure `python3` or `Local AI Gateway` is set to **Allow incoming connections**.
-3. **Run Diagnostic Doctor**:
-   ```bash
-   local-ai-gateway doctor
-   ```
-   This will verify port availability, Python dependencies, and Ollama connectivity.
+### Step 1: Allow python3 through macOS Firewall
+1. Open **System Settings** → **Network** → **Firewall**.
+2. If Firewall is ON, click **Options...**.
+3. Ensure **Terminal** (or your shell app: iTerm, Warp, etc.) is set to **Allow incoming connections**.
+4. Ensure **python3** is set to **Allow incoming connections**.
+   - If python3 is not listed, click **+** and add `/usr/local/bin/python3` or your Python binary.
+5. Click **OK** to save.
+
+**Quick Terminal Check:**
+```bash
+/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+/usr/libexec/ApplicationFirewall/socketfilterfw --listapps
+```
+
+### Step 2: Start the Gateway
+```bash
+# From the project root
+./start.sh
+# Or directly:
+python3 -m local_ai_gateway.main serve --port 8080
+```
+
+Verify it's running:
+```bash
+curl http://127.0.0.1:8080/health
+```
+
+### Step 3: Run Diagnostic Doctor
+```bash
+python3 -m local_ai_gateway.main doctor
+```
+This verifies port availability, Python dependencies, Ollama connectivity, and firewall status.
+
+### Step 4: iPhone Setup
+1. Open the **LM Bridge** app on your iPhone.
+2. When prompted, grant **Local Network** permission (System Settings > Privacy & Security > Local Network).
+3. In the app, either:
+   - Tap **CONNECT** next to a discovered Bonjour bridge, OR
+   - Manually enter your Mac's LAN IP (e.g. `192.168.1.100`) and port `8080`.
+4. Tap **PING BUS** to verify the connection.
+5. Send a prompt to stream tokens.
+
+### Step 5: If Still Not Working
+- **Same Wi-Fi**: Confirm both devices are on the **same Wi-Fi network** (not separate 2.4GHz/5GHz SSIDs that may be isolated).
+- **LAN IP**: On your Mac, run `ifconfig | grep "inet " | grep -v 127.0.0.1` to find your Wi-Fi IP.
+- **Firewall**: Temporarily disable the firewall to test: `sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off`
+- **Restart**: Restart both your Mac and iPhone if the connection was previously cached.
 
 ---
 
