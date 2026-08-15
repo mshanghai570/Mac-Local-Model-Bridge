@@ -18,15 +18,15 @@ public enum BridgeError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidUrl(let url):
-            return "Invalid Bridge URL: \(url)"
+            return "Bridge URL is not configured or invalid: '\(url)'. Open Settings and enter your Mac's LAN IP address (e.g. 192.168.1.xxx) or use Bonjour discovery."
         case .invalidResponse(let code, let msg):
-            return "Server returned HTTP \(code): \(msg)"
+            return "Server responded with HTTP \(code): \(msg). Is the gateway running on your Mac?"
         case .authenticationFailed:
-            return "Authentication required. Please check your Bridge API Key in Settings."
+            return "Authentication failed. Check your Bridge API Key in Settings, or disable auth on the Mac gateway."
         case .decodingError(let err):
-            return "Failed to parse response: \(err.localizedDescription)"
+            return "Failed to parse response from Mac Bridge: \(err.localizedDescription)"
         case .connectionFailed(let msg):
-            return "Could not connect to Mac Bridge. Ensure Mac is on same Wi-Fi. (\(msg))"
+            return "Could not connect to Mac Bridge. Check: 1) Mac is on the same Wi-Fi, 2) Gateway is running ('local-ai-gateway serve'), 3) macOS Firewall allows incoming connections for Python on port 8080, 4) IP address in Settings is correct. (\(msg))"
         case .serverError(let msg):
             return "Mac Bridge error: \(msg)"
         case .cancelled:
@@ -45,7 +45,13 @@ public class BridgeClient: ObservableObject {
     private func createRequest(path: String, method: String = "GET", body: Data? = nil) throws -> URLRequest {
         let settings = SettingsManager.shared
         let fullUrlStr = "\(settings.baseUrlString)\(path)"
-        guard let url = URL(string: fullUrlStr) else {
+        guard
+            let url = URL(string: fullUrlStr),
+            let scheme = url.scheme,
+            !scheme.isEmpty,
+            let host = url.host,
+            !host.isEmpty
+        else {
             throw BridgeError.invalidUrl(fullUrlStr)
         }
 
@@ -65,7 +71,8 @@ public class BridgeClient: ObservableObject {
 
     // MARK: - Health Check
     public func checkHealth() async throws -> HealthResponse {
-        let request = try createRequest(path: "/health")
+        var request = try createRequest(path: "/health")
+        request.timeoutInterval = 10
         do {
             let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {

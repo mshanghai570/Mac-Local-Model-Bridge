@@ -119,10 +119,13 @@ public struct SettingsView: View {
                                 .font(.system(size: 11, design: .monospaced))
                                 .foregroundColor(Color.gray)
                             Spacer()
-                            TextField("192.168.1.125", text: $settings.host)
+                            TextField("e.g. 192.168.1.100", text: $settings.host)
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.trailing)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled(true)
+                                .keyboardType(.numbersAndPunctuation)
                         }
                         .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
 

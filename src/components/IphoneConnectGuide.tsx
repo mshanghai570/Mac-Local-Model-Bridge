@@ -161,9 +161,16 @@ public class ChatViewModel: ObservableObject {
 }`
     },
     'BonjourDiscoveryManager.swift': {
-      desc: 'Network.framework NWBrowser scanning _local-ai-bridge._tcp on local Wi-Fi',
+      desc: 'Network.framework NWBrowser scanning _local-ai-bridge._tcp and _local-ai-gateway._tcp on local Wi-Fi',
       code: `import Foundation
 import Network
+
+public struct DiscoveredBridge: Identifiable, Hashable {
+    public let id: String
+    public let name: String
+    public let host: String
+    public let port: Int
+}
 
 public class BonjourDiscoveryManager: ObservableObject {
     @Published public var discoveredBridges: [DiscoveredBridge] = []
@@ -178,8 +185,14 @@ public class BonjourDiscoveryManager: ObservableObject {
         browser?.browseResultsChangedHandler = { [weak self] results, _ in
             DispatchQueue.main.async {
                 self?.discoveredBridges = results.compactMap { result in
-                    if case .service(let name, _, _, _) = result.endpoint {
-                        return DiscoveredBridge(id: name, name: name, host: "192.168.1.125", port: 8080)
+                    if case .service(let name, _, _, let metadata) = result.endpoint {
+                        var host = "localhost"
+                        if case .bonjour(let txtRecord) = metadata,
+                           let ip = txtRecord["ip"] as? String,
+                           !ip.isEmpty {
+                            host = ip
+                        }
+                        return DiscoveredBridge(id: name, name: name, host: host, port: 8080)
                     }
                     return nil
                 }

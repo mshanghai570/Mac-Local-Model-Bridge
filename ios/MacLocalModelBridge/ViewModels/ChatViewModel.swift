@@ -31,7 +31,7 @@ public class ChatViewModel: ObservableObject {
         self.messages.append(
             ChatMessage(
                 role: .assistant,
-                content: "🍏 **Mac Local Model Bridge Connected.** Ready to execute inference on Apple Silicon Neural Engine & Metal GPU. Send a prompt to stream tokens over LAN."
+                content: "🍏 **Mac Local Model Bridge ready.** Open **Settings** and enter your Mac's LAN IP address, or wait for Bonjour auto-discovery. Tap **PING BUS** to verify the connection, then send a prompt to stream tokens over LAN."
             )
         )
     }

@@ -43,11 +43,12 @@ public class SettingsManager: ObservableObject {
         let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "http://", with: "")
             .replacingOccurrences(of: "https://", with: "")
+        guard !cleanHost.isEmpty else { return "" }
         return "http://\(cleanHost):\(port)"
     }
 
     private init() {
-        self.host = defaults.string(forKey: "bridge_host") ?? "192.168.1.125"
+        self.host = defaults.string(forKey: "bridge_host") ?? ""
         let savedPort = defaults.integer(forKey: "bridge_port")
         self.port = savedPort > 0 ? savedPort : 8080
         self.apiKey = defaults.string(forKey: "bridge_api_key") ?? ""

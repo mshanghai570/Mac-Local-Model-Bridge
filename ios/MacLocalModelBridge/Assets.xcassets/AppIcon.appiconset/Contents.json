@@ -1,6 +1,31 @@
 {
   "images" : [
     {
+      "filename" : "IMG_2880_1024x1024.jpg",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "IMG_2880_1024x1024 1.jpg",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "filename" : "IMG_2880_1024x1024 2.jpg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
