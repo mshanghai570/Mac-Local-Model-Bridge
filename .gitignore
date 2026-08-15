@@ -13,8 +13,11 @@ __pycache__/
 .agent-orchestration/
 local_ai_gateway.egg-info/
 *.pyc
+*.ipa
 MacLocalModelBridge-unsigned.ipa
-data/
 ios/.build/
+ios/build/
+DerivedData/
+ios/MacLocalModelBridge.xcodeproj/project.xcworkspace/xcuserdata/
 *.swp
 *~

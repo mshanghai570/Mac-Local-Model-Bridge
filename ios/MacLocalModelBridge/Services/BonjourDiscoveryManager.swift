@@ -86,6 +86,12 @@ public class BonjourDiscoveryManager: ObservableObject {
 
                         let resolvedPort = Int(txtDict["port"] ?? "") ?? 8080
                         let uniqueId = "\(name).\(type).\(domain)"
+
+                        let isLoopback = resolvedHost == "127.0.0.1"
+                            || resolvedHost == "0.0.0.0"
+                            || resolvedHost == "localhost"
+                        if isLoopback { continue }
+
                         let bridge = DiscoveredBridge(
                             id: uniqueId,
                             name: name,

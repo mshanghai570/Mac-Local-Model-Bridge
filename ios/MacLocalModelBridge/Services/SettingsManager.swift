@@ -43,6 +43,7 @@ public class SettingsManager: ObservableObject {
         let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "http://", with: "")
             .replacingOccurrences(of: "https://", with: "")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard !cleanHost.isEmpty else { return "" }
         return "http://\(cleanHost):\(port)"
     }

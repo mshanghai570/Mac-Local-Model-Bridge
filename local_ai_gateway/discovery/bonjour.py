@@ -89,12 +89,24 @@ class BonjourAdvertiser:
             self.zeroconf = None
 
     def _get_local_ip(self) -> str:
+        try:
+            hostname = socket.gethostname()
+            addresses = socket.getaddrinfo(
+                hostname, None, family=socket.AF_INET, type=socket.SOCK_DGRAM
+            )
+            for addr in addresses:
+                ip = addr[4][0]
+                if not ip.startswith("127.") and ip != "0.0.0.0":
+                    return ip
+        except Exception:
+            pass
+
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            s.connect(('10.255.255.255', 1))
+            s.connect(("10.255.255.255", 1))
             ip = s.getsockname()[0]
         except Exception:
-            ip = '127.0.0.1'
+            ip = "127.0.0.1"
         finally:
             s.close()
         return ip

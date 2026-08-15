@@ -19,6 +19,7 @@ xcodebuild \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
   -sdk "$SDK" \
+  -destination 'generic/platform=iOS' \
   -derivedDataPath "$DERIVED_DATA" \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGNING_ALLOWED=NO \
