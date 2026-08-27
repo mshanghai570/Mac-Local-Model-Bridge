@@ -1,0 +1,185 @@
+name: iOS and Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ios-ci.yml"
+      - "ios/**"
+      - "local_ai_gateway/**"
+      - "cli/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "Makefile"
+  pull_request:
+    paths:
+      - ".github/workflows/ios-ci.yml"
+      - "ios/**"
+      - "local_ai_gateway/**"
+      - "cli/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python-tests:
+    name: Python backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend test dependencies
+        run: |
+          set -o pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+
+      - name: Run backend test suite
+        run: |
+          set -o pipefail
+          PYTHONPATH=. pytest -q 2>&1 | tee python-test.log
+
+      - name: Upload Python test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-log
+          path: python-test.log
+          if-no-files-found: warn
+          retention-days: 14
+
+  ios-xcode-build:
+    name: iOS Xcode build and tests
+    runs-on: macos-15
+    env:
+      WORKSPACE: ios/MacLocalModelBridge.xcworkspace
+      SCHEME: MacLocalModelBridge
+      CONFIGURATION: Debug
+      DERIVED_DATA: ${{ github.workspace }}/build/DerivedData
+      RESULT_BUNDLE: ${{ github.workspace }}/build/MacLocalModelBridge.xcresult
+      ARCHIVE_PATH: ${{ github.workspace }}/build/MacLocalModelBridge.xcarchive
+      SOURCE_PACKAGES: ${{ github.workspace }}/build/SourcePackages
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_16.4.app
+          xcodebuild -version
+          xcode-select --print-path
+          sw_vers
+
+      - name: Record project and runner diagnostics
+        run: |
+          set -o pipefail
+          mkdir -p build/logs
+          xcodebuild -list -workspace "$WORKSPACE" 2>&1 | tee build/logs/xcodebuild-list.log
+          xcodebuild -showsdks 2>&1 | tee build/logs/xcodebuild-sdks.log
+
+      - name: Resolve Swift Package Manager dependencies
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -resolvePackageDependencies \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+            2>&1 | tee build/logs/xcodebuild-resolve-packages.log
+
+      - name: Record effective iOS build settings
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -showBuildSettings \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.5" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+            2>&1 | tee build/logs/xcodebuild-settings.log
+
+      - name: Build and run iOS unit tests on simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            test \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration "$CONFIGURATION" \
+            -sdk iphonesimulator \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.5" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -resultBundlePath "$RESULT_BUNDLE" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/logs/xcodebuild-test.log
+
+      - name: Create unsigned device archive
+        run: |
+          set -o pipefail
+          xcodebuild \
+            archive \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath "$ARCHIVE_PATH" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -clonedSourcePackagesDirPath "$SOURCE_PACKAGES" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build/logs/xcodebuild-archive.log
+
+      - name: Upload Xcode logs and result bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-diagnostics
+          path: |
+            build/logs
+            build/*.xcresult
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload unsigned Xcode archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacLocalModelBridge-unsigned-xcarchive
+          path: build/MacLocalModelBridge.xcarchive
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Explain unsigned artifact status
+        if: success()
+        run: |
+          cat <<'EOF'
+          The uploaded .xcarchive is an unsigned compile-validation artifact.
+          It is not an installable IPA. A signed IPA export requires a distribution
+          certificate, matching provisioning profile, Apple team identifier, and
+          an ExportOptions.plist configured from those credentials. None are stored
+          in this repository or used by this workflow.
+          EOF
