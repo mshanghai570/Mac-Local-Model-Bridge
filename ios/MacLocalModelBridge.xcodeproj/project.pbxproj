@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		110000182C1A000100000001 /* PhoneHttpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000182C1A000100000001 /* PhoneHttpServer.swift */; };
 		110000012C1A000100000001 /* MacLocalModelBridgeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */; };
 		110000022C1A000100000001 /* BridgeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000022C1A000100000001 /* BridgeModel.swift */; };
 		110000032C1A000100000001 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000032C1A000100000001 /* ChatMessage.swift */; };
@@ -25,6 +26,11 @@
 		110000102C1A000100000001 /* TelemetryHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000102C1A000100000001 /* TelemetryHeaderView.swift */; };
 		110000112C1A000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 220000112C1A000100000001 /* Assets.xcassets */; };
 		110000122C1A000100000001 /* MacLocalModelBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */; };
+		110000132C1A000100000001 /* LlamaSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DD0000022C1A000100000001 /* LlamaSwift */; };
+		110000142C1A000100000001 /* DeviceModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000162C1A000100000001 /* DeviceModelStore.swift */; };
+		110000172C1A000100000001 /* ReasoningStreamParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000172C1A000100000001 /* ReasoningStreamParser.swift */; };
+		110000152C1A000100000001 /* LocalInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000152C1A000100000001 /* LocalInferenceEngine.swift */; };
+		110000192C1A000100000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000192C1A000100000001 /* AppTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,6 +44,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		220000182C1A000100000001 /* PhoneHttpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneHttpServer.swift; sourceTree = "<group>"; };
 		220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLocalModelBridgeApp.swift; sourceTree = "<group>"; };
 		220000022C1A000100000001 /* BridgeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeModel.swift; sourceTree = "<group>"; };
 		220000032C1A000100000001 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
@@ -55,10 +62,15 @@
 		2200000F2C1A000100000001 /* MessageBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageBubbleView.swift; sourceTree = "<group>"; };
 		220000102C1A000100000001 /* TelemetryHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryHeaderView.swift; sourceTree = "<group>"; };
 		220000112C1A000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLocalModelBridgeTests.swift; sourceTree = "<group>" };
-		220000132C1A000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>" };
-		330000012C1A000100000001 /* MacLocalModelBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacLocalModelBridge.app; sourceTree = BUILT_PRODUCTS_DIR };
-		330000022C1A000100000001 /* MacLocalModelBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacLocalModelBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR };
+		220000122C1A000100000001 /* MacLocalModelBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLocalModelBridgeTests.swift; sourceTree = "<group>"; };
+		220000132C1A000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		220000142C1A000100000001 /* MacLocalModelBridge.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacLocalModelBridge.entitlements; sourceTree = "<group>"; };
+		330000012C1A000100000001 /* MacLocalModelBridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacLocalModelBridge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		330000022C1A000100000001 /* MacLocalModelBridgeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacLocalModelBridgeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		220000162C1A000100000001 /* DeviceModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceModelStore.swift; sourceTree = "<group>"; };
+		220000172C1A000100000001 /* ReasoningStreamParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningStreamParser.swift; sourceTree = "<group>"; };
+		220000152C1A000100000001 /* LocalInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalInferenceEngine.swift; sourceTree = "<group>"; };
+		220000192C1A000100000001 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +78,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				110000132C1A000100000001 /* LlamaSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,12 +105,14 @@
 			isa = PBXGroup;
 			children = (
 				220000012C1A000100000001 /* MacLocalModelBridgeApp.swift */,
+				220000192C1A000100000001 /* AppTheme.swift */,
 				550000032C1A000100000001 /* Models */,
 				550000042C1A000100000001 /* Services */,
 				550000052C1A000100000001 /* ViewModels */,
 				550000062C1A000100000001 /* Views */,
 				220000112C1A000100000001 /* Assets.xcassets */,
 				220000132C1A000100000001 /* Info.plist */,
+				220000142C1A000100000001 /* MacLocalModelBridge.entitlements */,
 			);
 			path = MacLocalModelBridge;
 			sourceTree = "<group>";
@@ -118,6 +133,10 @@
 				220000052C1A000100000001 /* BonjourDiscoveryManager.swift */,
 				220000062C1A000100000001 /* BridgeClient.swift */,
 				220000072C1A000100000001 /* SettingsManager.swift */,
+				220000162C1A000100000001 /* DeviceModelStore.swift */,
+				220000172C1A000100000001 /* ReasoningStreamParser.swift */,
+				220000152C1A000100000001 /* LocalInferenceEngine.swift */,
+				220000182C1A000100000001 /* PhoneHttpServer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -186,6 +205,9 @@
 			dependencies = (
 			);
 			name = MacLocalModelBridge;
+			packageProductDependencies = (
+				DD0000022C1A000100000001 /* LlamaSwift */,
+			);
 			productName = MacLocalModelBridge;
 			productReference = 330000012C1A000100000001 /* MacLocalModelBridge.app */;
 			productType = "com.apple.product-type.application";
@@ -235,6 +257,9 @@
 				Base,
 			);
 			mainGroup = 550000012C1A000100000001;
+			packageReferences = (
+				DD0000012C1A000100000001 /* XCRemoteSwiftPackageReference "llama.swift" */,
+			);
 			productRefGroup = 550000092C1A000100000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -277,6 +302,11 @@
 				1100000E2C1A000100000001 /* SettingsView.swift in Sources */,
 				1100000F2C1A000100000001 /* MessageBubbleView.swift in Sources */,
 				110000102C1A000100000001 /* TelemetryHeaderView.swift in Sources */,
+				110000142C1A000100000001 /* DeviceModelStore.swift in Sources */,
+				110000172C1A000100000001 /* ReasoningStreamParser.swift in Sources */,
+				110000152C1A000100000001 /* LocalInferenceEngine.swift in Sources */,
+				110000182C1A000100000001 /* PhoneHttpServer.swift in Sources */,
+				110000192C1A000100000001 /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,6 +327,25 @@
 			targetProxy = AA0000012C1A000100000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DD0000012C1A000100000001 /* XCRemoteSwiftPackageReference "llama.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mattt/llama.swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9999.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DD0000022C1A000100000001 /* LlamaSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DD0000012C1A000100000001 /* XCRemoteSwiftPackageReference "llama.swift" */;
+			productName = LlamaSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		BB0000012C1A000100000001 /* Debug */ = {
@@ -420,6 +469,7 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_ENTITLEMENTS = MacLocalModelBridge/MacLocalModelBridge.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
@@ -456,6 +506,7 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_ENTITLEMENTS = MacLocalModelBridge/MacLocalModelBridge.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";

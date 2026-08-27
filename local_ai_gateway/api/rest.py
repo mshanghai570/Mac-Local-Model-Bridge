@@ -72,11 +72,13 @@ def check_auth(request: Request):
 async def get_health(request: Request):
     """
     Liveness probe: verifies the Local AI Gateway process is alive.
-    Returns memory stats, active sessions, request counters, and uptime.
+    Returns Mac bridge status (Zed running, Accessibility trust), memory stats,
+    active sessions, request counters, and uptime.
     """
+    from ..macos import build_bridge_health
     summary = metrics_collector.get_summary()
-    return {
-        "status": "healthy",
+    payload = build_bridge_health()
+    payload.update({
         "service": "local-ai-gateway",
         "version": "1.0.0",
         "uptime_seconds": summary["uptime_seconds"],
@@ -85,7 +87,8 @@ async def get_health(request: Request):
         "active_sessions": session_manager.count(),
         "total_requests": summary["total_requests"],
         "system_resources": summary["system_resources"]
-    }
+    })
+    return payload
 
 @router.get("/ready")
 async def get_readiness(request: Request):

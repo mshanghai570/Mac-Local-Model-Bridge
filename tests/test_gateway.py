@@ -158,6 +158,22 @@ class TestGateway(unittest.TestCase):
         formatted = format_error_response("Test error", "invalid_request_error", 400, "param1", "req_1")
         self.assertEqual(formatted["error"]["param"], "param1")
 
+    def test_macos_bridge_health_payload(self):
+        from local_ai_gateway.macos.status import build_bridge_health, BRIDGE_PROTOCOL_VERSION
+        payload = build_bridge_health()
+
+        self.assertEqual(payload["status"], "ok")
+        self.assertEqual(payload["device"], "Mac")
+        self.assertEqual(payload["bridge"], "running")
+        self.assertIsInstance(payload["zed"], bool)
+        self.assertIsInstance(payload["accessibility"], bool)
+        self.assertEqual(payload["protocolVersion"], BRIDGE_PROTOCOL_VERSION)
+
+    def test_macos_capability_probes(self):
+        from local_ai_gateway.macos.accessibility import is_accessibility_trusted, is_zed_running
+        self.assertIsInstance(is_accessibility_trusted(), bool)
+        self.assertIsInstance(is_zed_running(), bool)
+
     def test_zero_config_defaults(self):
         import os
         from unittest.mock import patch

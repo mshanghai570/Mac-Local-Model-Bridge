@@ -20,9 +20,62 @@ struct MacLocalModelBridgeApp: App {
                 .environmentObject(discovery)
                 .environmentObject(bridgeClient)
                 .preferredColorScheme(.dark)
-                .onAppear {
-                    discovery.startBrowsing()
+                .onOpenURL { url in
+                    Self.handleIncomingFile(url)
                 }
+                .onAppear {
+                    if settings.autoDiscover {
+                        discovery.startBrowsing()
+                    }
+                    // Configure server for direct inference mode (iPhone powers the models)
+                    PhoneHttpServer.shared.mode = .directInference
+                    PhoneHttpServer.shared.start(port: settings.serverPort)
+                }
+                .onDisappear {
+                    discovery.stopBrowsing()
+                    PhoneHttpServer.shared.stop()
+                }
+                .onChange(of: settings.autoDiscover) { enabled in
+                    if enabled {
+                        discovery.startBrowsing()
+                    } else {
+                        discovery.stopBrowsing()
+                    }
+                }
+        }
+    }
+
+    private static func handleIncomingFile(_ url: URL) {
+        guard url.isFileURL, url.pathExtension.lowercased() == "gguf" else { return }
+        let stagedURL: URL
+        do {
+            // Copy synchronously while the security-scoped extension handed to
+            // us at open time is still valid - a detached background task can
+            // lose access to the original file in another app's container.
+            stagedURL = try DeviceModelStore.shared.stageImport(from: url)
+        } catch {
+            NotificationCenter.default.post(
+                name: .localModelImportFailed,
+                object: nil,
+                userInfo: ["message": error.localizedDescription]
+            )
+            return
+        }
+        Task.detached {
+            do {
+                try await DeviceModelStore.shared.completeImport(at: stagedURL)
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .localModelImported, object: nil)
+                }
+            } catch {
+                await MainActor.run {
+                    NotificationCenter.default.post(
+                        name: .localModelImportFailed,
+                        object: nil,
+                        userInfo: ["message": error.localizedDescription]
+                    )
+                }
+            }
         }
     }
 }
@@ -78,6 +131,11 @@ struct ContentView: View {
                 }
                 .tag(Tab.settings)
         }
-        .tint(Color(red: 0.0, green: 1.0, blue: 0.25)) // Phosphor Matrix Green #00FF41
+        .tint(Color.phosphorGreen)
+        .onReceive(NotificationCenter.default.publisher(for: .localModelImported)) { _ in
+            withAnimation(AppTheme.Animation.standard) {
+                selectedTab = .models
+            }
+        }
     }
 }

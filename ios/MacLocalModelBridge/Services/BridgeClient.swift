@@ -124,7 +124,8 @@ public class BridgeClient: ObservableObject {
         messages: [ChatMessage],
         model: String,
         temperature: Double = 0.7,
-        system: String? = nil
+        system: String? = nil,
+        tools: [OpenAIToolDefinition]? = nil
     ) async throws -> ChatResponsePayload {
         let payloadMessages = messages.map {
             ChatMessagePayload(role: $0.role.rawValue, content: $0.content)
@@ -134,7 +135,8 @@ public class BridgeClient: ObservableObject {
             messages: payloadMessages,
             stream: false,
             temperature: temperature,
-            system: system
+            system: system,
+            tools: tools
         )
 
         let bodyData = try JSONEncoder().encode(payload)
@@ -161,14 +163,21 @@ public class BridgeClient: ObservableObject {
     }
 
     // MARK: - Real-Time Server-Sent Events (SSE) Streaming
+    public struct ChatStreamChunk: Equatable {
+        public let content: String?
+        public let toolCalls: [OpenAIToolCall]?
+        public let done: Bool?
+    }
+
     public func streamChat(
         messages: [ChatMessage],
         model: String,
         temperature: Double = 0.7,
-        system: String? = nil
-    ) -> AsyncThrowingStream<String, Error> {
+        system: String? = nil,
+        tools: [OpenAIToolDefinition]? = nil
+    ) -> AsyncThrowingStream<ChatStreamChunk, Error> {
         return AsyncThrowingStream { continuation in
-            let task = Task {
+            let task = Task.detached {
                 do {
                     let payloadMessages = messages.map {
                         ChatMessagePayload(role: $0.role.rawValue, content: $0.content)
@@ -178,12 +187,14 @@ public class BridgeClient: ObservableObject {
                         messages: payloadMessages,
                         stream: true,
                         temperature: temperature,
-                        system: system
+                        system: system,
+                        tools: tools
                     )
 
                     let bodyData = try JSONEncoder().encode(payload)
                     var request = try self.createRequest(path: "/chat", method: "POST", body: bodyData)
                     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+                    request.timeoutInterval = 60
 
                     let (bytes, response) = try await self.urlSession.bytes(for: request)
                     guard let httpResponse = response as? HTTPURLResponse else {
@@ -212,13 +223,18 @@ public class BridgeClient: ObservableObject {
                         let jsonString = String(trimmed.dropFirst(6))
 
                         if jsonString == "[DONE]" {
+                            continuation.yield(ChatStreamChunk(content: nil, toolCalls: nil, done: true))
                             break
                         }
 
                         if let data = jsonString.data(using: .utf8),
-                           let chunk = try? JSONDecoder().decode(StreamChunkPayload.self, from: data),
-                           let content = chunk.content {
-                            continuation.yield(content)
+                           let chunk = try? JSONDecoder().decode(StreamChunkPayload.self, from: data) {
+                            let output = ChatStreamChunk(
+                                content: chunk.content,
+                                toolCalls: chunk.toolCalls,
+                                done: chunk.done
+                            )
+                            continuation.yield(output)
                         }
                     }
 

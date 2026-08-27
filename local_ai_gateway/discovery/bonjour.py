@@ -39,6 +39,8 @@ class BonjourAdvertiser:
         try:
             self.zeroconf = Zeroconf()
             hostname = socket.gethostname()
+            if hostname.endswith(".local"):
+                hostname = hostname[:-len(".local")]
             local_ip = self._get_local_ip()
 
             txt_records = {
@@ -48,6 +50,7 @@ class BonjourAdvertiser:
                 b"provider": str(self.properties.get("provider", "ollama")).encode("utf-8"),
                 b"auth_required": b"true" if self.properties.get("auth_required") else b"false",
                 b"ip": local_ip.encode("utf-8"),
+                b"host": f"{hostname}.local.".encode("utf-8"),
                 b"port": str(self.port).encode("utf-8")
             }
 
@@ -89,6 +92,21 @@ class BonjourAdvertiser:
             self.zeroconf = None
 
     def _get_local_ip(self) -> str:
+        # Prefer the IP of the interface used for the default route (the primary
+        # outbound interface, typically Wi-Fi). This matches config.lan_ip and is
+        # the address other LAN devices can actually reach.
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("10.255.255.255", 1))
+            ip = s.getsockname()[0]
+            if ip and not ip.startswith("127."):
+                return ip
+        except Exception:
+            pass
+        finally:
+            s.close()
+
+        # Fallback: resolve the hostname and take the first non-loopback address.
         try:
             hostname = socket.gethostname()
             addresses = socket.getaddrinfo(
@@ -101,12 +119,4 @@ class BonjourAdvertiser:
         except Exception:
             pass
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        try:
-            s.connect(("10.255.255.255", 1))
-            ip = s.getsockname()[0]
-        except Exception:
-            ip = "127.0.0.1"
-        finally:
-            s.close()
-        return ip
+        return "127.0.0.1"

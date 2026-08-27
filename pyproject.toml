@@ -41,6 +41,8 @@ dependencies = [
     "httpx>=0.27.0",
     "pydantic>=2.6.0",
     "zeroconf>=0.131.0",
+    "psutil>=5.9.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -56,10 +58,11 @@ dev = [
 
 [project.scripts]
 local-ai-gateway = "local_ai_gateway.main:cli_entry"
+bridge-cli = "cli.mac_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["local_ai_gateway*", "local_model_bridge*"]
+include = ["local_ai_gateway*", "local_model_bridge*", "cli*"]
 
 [tool.ruff]
 line-length = 100

@@ -11,11 +11,13 @@ public struct ChatView: View {
     @FocusState private var isInputFocused: Bool
 
     public var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Top Telemetry Header
                 TelemetryHeaderView(
-                    activeModel: viewModel.activeModel,
+                    activeModel: viewModel.source == .device
+                        ? (viewModel.loadedDeviceModelInfo?.name ?? viewModel.selectedDeviceModel?.name ?? "No on-device model")
+                        : viewModel.activeModel,
                     isGenerating: viewModel.isGenerating,
                     tokensPerSecond: viewModel.liveTokensPerSecond,
                     tokenCount: viewModel.liveTokenCount
@@ -24,17 +26,30 @@ public struct ChatView: View {
                 // Chat Messages Scroll List
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: AppTheme.Spacing.sm, content: {
                             ForEach(viewModel.messages) { msg in
                                 MessageBubbleView(message: msg)
                                     .id(msg.id)
+                                    .transition(.asymmetric(
+                                        insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                        removal: .opacity
+                                    ))
                             }
-                        }
-                        .padding(.vertical, 12)
+                        })
+                        .padding(.vertical, AppTheme.Spacing.md)
+                        .animation(AppTheme.Animation.standard, value: viewModel.messages)
+                    }
+                    .onTapGesture {
+                        isInputFocused = false
                     }
                     .onChange(of: viewModel.messages.last?.content) { _ in
-                        if let lastId = viewModel.messages.last?.id {
-                            withAnimation(.easeOut(duration: 0.15)) {
+                        guard let lastId = viewModel.messages.last?.id else { return }
+                        // Defer scrollTo to the next run-loop tick so the ForEach
+                        // has a chance to render the new MessageBubbleView before we
+                        // try to scroll to it.  On iOS 16+ calling scrollTo for an
+                        // as-yet-unrendered view ID triggers an EXC_BAD_ACCESS crash.
+                        DispatchQueue.main.async {
+                            withAnimation(AppTheme.Animation.standard) {
                                 proxy.scrollTo(lastId, anchor: .bottom)
                             }
                         }
@@ -43,86 +58,137 @@ public struct ChatView: View {
 
                 // Error Banner if present
                 if let error = viewModel.errorMessage {
-                    HStack {
+                    HStack(spacing: AppTheme.Spacing.xs) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(.errorRed)
                         Text(error)
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundColor(.white)
+                            .font(AppTheme.Font.caption2())
+                            .foregroundColor(.textPrimary)
                         Spacer()
+                        Button(action: {
+                            withAnimation(AppTheme.Animation.fast) {
+                                viewModel.errorMessage = nil
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(Color.textSecondary)
+                        }
                     }
-                    .padding(8)
-                    .background(Color.red.opacity(0.2))
-                    .border(Color.red, width: 1)
+                    .padding(AppTheme.Spacing.xs)
+                    .background(Color.errorRed.opacity(0.2))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
+                            .stroke(Color.errorRed, lineWidth: 1)
+                    )
+                    .cornerRadius(AppTheme.Radius.sm)
+                    .padding(.horizontal, AppTheme.Spacing.lg)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .animation(AppTheme.Animation.standard, value: viewModel.errorMessage)
                 }
 
                 // Input Bar & Action Controls
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        TextField("Send prompt to Mac GPU...", text: $viewModel.inputPrompt, axis: .vertical)
-                            .font(.system(size: 13, design: .monospaced))
-                            .foregroundColor(.white)
-                            .padding(10)
-                            .background(Color(red: 0.05, green: 0.05, blue: 0.06))
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(red: 0.16, green: 0.17, blue: 0.18), lineWidth: 1)
-                            )
-                            .focused($isInputFocused)
-                            .disabled(viewModel.isGenerating)
-                            .lineLimit(1...5)
+                VStack(spacing: AppTheme.Spacing.xs) {
+                    // Source selector: Mac bridge vs on-device
+                    Picker("Source", selection: $viewModel.source) {
+                        ForEach(ChatSource.allCases) { source in
+                            Text(source.rawValue).tag(source)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Color.phosphorGreen)
+                    .animation(AppTheme.Animation.standard, value: viewModel.source)
+
+                    HStack(spacing: AppTheme.Spacing.xs) {
+                        // Keyboard dismiss button (shows only while focused)
+                        if isInputFocused {
+                            Button(action: {
+                                withAnimation(AppTheme.Animation.fast) {
+                                    isInputFocused = false
+                                }
+                            }) {
+                                Image(systemName: "keyboard.chevron.compact.down")
+                                    .foregroundColor(Color.textSecondary)
+                                    .font(.system(size: 16))
+                                    .frame(width: 32, height: 38)
+                            }
+                            .transition(.opacity)
+                        }
+
+                        TextField(
+                            viewModel.source == .device
+                                ? "Send prompt to on-device model..."
+                                : "Send prompt to Mac GPU...",
+                            text: $viewModel.inputPrompt,
+                            axis: .vertical
+                        )
+                        .font(AppTheme.Font.subheadline())
+                        .foregroundColor(.textPrimary)
+                        .padding(AppTheme.Spacing.sm)
+                        .background(Color.backgroundElevated)
+                        .cornerRadius(AppTheme.Radius.md)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.md)
+                                .stroke(Color.borderInput, lineWidth: 1)
+                        )
+                        .focused($isInputFocused)
+                        .disabled(viewModel.isGenerating)
+                        .lineLimit(1...5)
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Done") {
+                                    isInputFocused = false
+                                }
+                                .foregroundColor(Color.phosphorGreen)
+                                .font(AppTheme.Font.footnote(.bold))
+                            }
+                        }
 
                         if viewModel.isGenerating {
                             Button(action: {
                                 viewModel.stopGeneration()
                             }) {
                                 Image(systemName: "stop.fill")
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.textPrimary)
                                     .font(.system(size: 14, weight: .bold))
                                     .frame(width: 38, height: 38)
-                                    .background(Color(red: 0.9, green: 0.2, blue: 0.2))
-                                    .cornerRadius(6)
+                                    .background(Color.errorRed)
+                                    .cornerRadius(AppTheme.Radius.md)
                             }
+                            .transition(.opacity)
                         } else {
                             Button(action: {
                                 isInputFocused = false
                                 viewModel.sendMessage()
                             }) {
                                 Image(systemName: "arrow.up")
-                                    .foregroundColor(Color(red: 0.05, green: 0.05, blue: 0.06))
+                                    .foregroundColor(Color.backgroundPrimary)
                                     .font(.system(size: 14, weight: .bold))
                                     .frame(width: 38, height: 38)
-                                    .background(viewModel.inputPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color(red: 0.0, green: 1.0, blue: 0.25))
-                                    .cornerRadius(6)
+                                    .background(
+                                        Group {
+                                            if viewModel.inputPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                                Color.textSecondary.opacity(0.4)
+                                            } else {
+                                                Color.phosphorGreen
+                                            }
+                                        }
+                                    )
+                                    .cornerRadius(AppTheme.Radius.md)
                             }
                             .disabled(viewModel.inputPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
                     }
+                    .animation(AppTheme.Animation.standard, value: viewModel.isGenerating)
 
-                    // Model Selector Quick Switcher
+                    // Model Selector Row
                     HStack {
-                        Menu {
-                            Button("llama3.2:3b") { viewModel.activeModel = "llama3.2:3b" }
-                            Button("llama3.2:1b") { viewModel.activeModel = "llama3.2:1b" }
-                            Button("qwen2.5:7b") { viewModel.activeModel = "qwen2.5:7b" }
-                            Button("mistral:7b") { viewModel.activeModel = "mistral:7b" }
-                            Button("deepseek-r1:1.5b") { viewModel.activeModel = "deepseek-r1:1.5b" }
-                            Button("phi3:mini") { viewModel.activeModel = "phi3:mini" }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "cpu")
-                                    .font(.system(size: 10))
-                                Text(viewModel.activeModel)
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 8))
-                            }
-                            .foregroundColor(Color(red: 0.95, green: 0.49, blue: 0.15))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color(red: 0.11, green: 0.12, blue: 0.13))
-                            .cornerRadius(4)
+                        if viewModel.source == .device {
+                            deviceModelSelector
+                                .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .trailing)), removal: .opacity))
+                        } else {
+                            macModelSelector
+                                .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .trailing)), removal: .opacity))
                         }
 
                         Spacer()
@@ -130,22 +196,107 @@ public struct ChatView: View {
                         Button(action: {
                             viewModel.clearChat()
                         }) {
-                            HStack(spacing: 4) {
+                            HStack(spacing: AppTheme.Spacing.xxs) {
                                 Image(systemName: "trash")
                                     .font(.system(size: 9))
                                 Text("CLEAR")
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .font(AppTheme.Font.caption(.bold))
                             }
-                            .foregroundColor(Color.gray)
+                            .foregroundColor(Color.textSecondary)
                         }
                     }
+                    .animation(AppTheme.Animation.standard, value: viewModel.source)
                 }
-                .padding(12)
-                .background(Color(red: 0.08, green: 0.09, blue: 0.10))
+                .padding(AppTheme.Spacing.md)
+                .background(Color.backgroundSurface)
             }
-            .background(Color(red: 0.05, green: 0.05, blue: 0.06).ignoresSafeArea())
-            .navigationBarHidden(true)
+            .background(Color.backgroundPrimary.ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .task {
+                viewModel.refreshDeviceModels()
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+    }
+
+    // MARK: - MAC Model Selector
+
+    private var macModelSelector: some View {
+        Menu {
+            Button("llama3.2:3b") { withAnimation { viewModel.activeModel = "llama3.2:3b" } }
+            Button("llama3.2:1b") { withAnimation { viewModel.activeModel = "llama3.2:1b" } }
+            Button("qwen2.5:7b") { withAnimation { viewModel.activeModel = "qwen2.5:7b" } }
+            Button("mistral:7b") { withAnimation { viewModel.activeModel = "mistral:7b" } }
+            Button("deepseek-r1:1.5b") { withAnimation { viewModel.activeModel = "deepseek-r1:1.5b" } }
+            Button("phi3:mini") { withAnimation { viewModel.activeModel = "phi3:mini" } }
+        } label: {
+            HStack(spacing: AppTheme.Spacing.xxs) {
+                Image(systemName: "cpu")
+                    .font(.system(size: 10))
+                Text(viewModel.activeModel)
+                    .font(AppTheme.Font.caption(.bold))
+                    .lineLimit(1)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8))
+            }
+            .foregroundColor(Color.amber)
+            .padding(.horizontal, AppTheme.Spacing.xs)
+            .padding(.vertical, 4)
+            .background(Color.backgroundElevated)
+            .cornerRadius(AppTheme.Radius.xs)
+        }
+    }
+
+    // MARK: - Device Model Selector
+
+    @ViewBuilder
+    private var deviceModelSelector: some View {
+        Group {
+            if viewModel.isDeviceModelLoading {
+                HStack(spacing: AppTheme.Spacing.xs) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("LOADING MODEL…")
+                        .font(AppTheme.Font.caption(.bold))
+                        .foregroundColor(Color.textSecondary)
+                }
+                .padding(.horizontal, AppTheme.Spacing.xs)
+                .padding(.vertical, 4)
+            } else {
+                Menu {
+                    if viewModel.deviceModels.isEmpty {
+                        Button("No models — import a .gguf in Models tab") {}
+                    }
+                    ForEach(viewModel.deviceModels) { model in
+                        Button(model.name) {
+                            viewModel.selectDeviceModel(model)
+                            viewModel.loadDeviceModel(model)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: AppTheme.Spacing.xxs) {
+                        Image(systemName: "memorychip")
+                            .font(.system(size: 10))
+                        Text(viewModel.loadedDeviceModelInfo?.name ?? viewModel.selectedDeviceModel?.name ?? "Import & load model")
+                            .font(AppTheme.Font.caption(.bold))
+                            .lineLimit(1)
+                        if viewModel.loadedDeviceModelInfo != nil {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 10))
+                                .foregroundColor(Color.phosphorGreen)
+                        }
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                    }
+                    .foregroundColor(Color.phosphorGreen)
+                    .padding(.horizontal, AppTheme.Spacing.xs)
+                    .padding(.vertical, 4)
+                    .background(Color.backgroundElevated)
+                    .cornerRadius(AppTheme.Radius.xs)
+                }
+            }
+        }
+        .animation(AppTheme.Animation.standard, value: viewModel.isDeviceModelLoading)
+        .animation(AppTheme.Animation.standard, value: viewModel.loadedDeviceModelInfo?.name)
     }
 }

@@ -15,23 +15,22 @@ public struct SettingsView: View {
     @State private var pingSuccess: Bool = false
 
     public var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("CONNECTION & TELEMETRY")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                            .font(AppTheme.Font.caption(.bold))
+                            .foregroundColor(.textPrimary)
                         Text("Target Mac Bridge endpoint configuration")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(Color.gray)
+                            .font(AppTheme.Font.caption2())
+                            .foregroundColor(Color.textSecondary)
                     }
                     Spacer()
-                    Button(action: {
-                        testConnection()
-                    }) {
-                        HStack(spacing: 4) {
+
+                    Button(action: testConnection) {
+                        HStack(spacing: AppTheme.Spacing.xxs) {
                             if isPinging {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -39,152 +38,214 @@ public struct SettingsView: View {
                                 Image(systemName: "bolt.fill")
                             }
                             Text("PING BUS")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(AppTheme.Font.caption(.bold))
                         }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(Color(red: 0.15, green: 0.16, blue: 0.18))
-                        .cornerRadius(4)
+                        .foregroundColor(.textPrimary)
+                        .padding(.horizontal, AppTheme.Spacing.xs)
+                        .padding(.vertical, AppTheme.Spacing.xxs)
+                        .background(Color.backgroundElevated)
+                        .cornerRadius(AppTheme.Radius.sm)
                     }
+                    .disabled(isPinging)
                 }
-                .padding(14)
-                .background(Color(red: 0.08, green: 0.09, blue: 0.10))
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(Color(red: 0.16, green: 0.17, blue: 0.18)),
-                    alignment: .bottom
-                )
+                .padding(AppTheme.Spacing.lg)
+                .background(Color.backgroundSurface)
+                .bottomSeparator()
 
                 Form {
                     // Ping Diagnostic Result Banner
                     if let ping = pingResult {
-                        Section(header: Text("DIAGNOSTIC PROBE RESULT").font(.system(size: 10, design: .monospaced))) {
-                            HStack {
+                        Section {
+                            HStack(spacing: AppTheme.Spacing.xs) {
                                 Circle()
-                                    .fill(pingSuccess ? Color(red: 0.0, green: 1.0, blue: 0.25) : Color.red)
+                                    .fill(pingSuccess ? Color.successGreen : .errorRed)
                                     .frame(width: 8, height: 8)
+                                    .pulseGlow(color: pingSuccess ? Color.successGreen : .errorRed, animate: pingSuccess)
+
                                 Text(ping)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(pingSuccess ? Color(red: 0.0, green: 1.0, blue: 0.25) : Color.red)
+                                    .font(AppTheme.Font.caption2())
+                                    .foregroundColor(pingSuccess ? Color.successGreen : .errorRed)
                             }
-                            .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                            .listRowBackground(Color.clear)
                         }
+                        .listRowInsets(EdgeInsets())
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .animation(AppTheme.Animation.standard, value: pingResult)
                     }
 
                     // Bonjour Discovered Bridges
-                    Section(header: Text("BONJOUR ZERO-CONF SCANNED BRIDGES").font(.system(size: 10, design: .monospaced))) {
-                        if discovery.discoveredBridges.isEmpty {
-                            HStack {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text(discovery.lastDiscoveryStatus)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(Color.gray)
+                    Section {
+                        HStack {
+                            Toggle("AUTO-DISCOVER MAC", isOn: $settings.autoDiscover)
+                                .font(AppTheme.Font.caption(.bold))
+                                .foregroundColor(.textPrimary)
+                                .tint(Color.phosphorGreen)
+                            Spacer()
+                            Button("RESCAN") {
+                                discovery.restartBrowsing()
                             }
-                            .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                            .font(AppTheme.Font.caption2(.bold))
+                            .foregroundColor(.textPrimary)
+                            .padding(.horizontal, AppTheme.Spacing.xs)
+                            .padding(.vertical, 4)
+                            .background(Color.backgroundElevated)
+                            .cornerRadius(AppTheme.Radius.sm)
+                        }
+                        .listRowBackground(Color.clear)
+
+                        if discovery.discoveredBridges.isEmpty {
+                            HStack(spacing: AppTheme.Spacing.xs) {
+                                if discovery.isBrowsing {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundColor(Color.textSecondary)
+                                        .font(.system(size: 12))
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(discovery.lastDiscoveryStatus)
+                                        .font(AppTheme.Font.caption2())
+                                        .foregroundColor(Color.textSecondary)
+                                    if !discovery.isBrowsing {
+                                        Text("Make sure the gateway is running on your Mac, then tap RESCAN, or enter the LAN IP manually below.")
+                                            .font(AppTheme.Font.caption2(.light))
+                                            .foregroundColor(Color.textSecondary.opacity(0.7))
+                                    }
+                                }
+                            }
+                            .listRowBackground(Color.clear)
+                            .foregroundColor(.clear)
                         } else {
                             ForEach(discovery.discoveredBridges) { bridge in
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(bridge.name)
-                                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white)
+                                            .font(AppTheme.Font.caption2(.bold))
+                                            .foregroundColor(.textPrimary)
                                         Text(bridge.urlString)
-                                            .font(.system(size: 10, design: .monospaced))
-                                            .foregroundColor(Color(red: 0.0, green: 1.0, blue: 0.25))
+                                            .font(AppTheme.Font.caption2(.light))
+                                            .foregroundColor(Color.phosphorGreen)
                                     }
                                     Spacer()
                                     Button("CONNECT") {
                                         settings.setEndpoint(host: bridge.host, port: bridge.port)
+                                        discovery.stopBrowsing()
                                         testConnection()
                                     }
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color(red: 0.05, green: 0.05, blue: 0.06))
-                                    .padding(.horizontal, 8)
+                                    .font(AppTheme.Font.caption2(.bold))
+                                    .foregroundColor(Color.backgroundPrimary)
+                                    .padding(.horizontal, AppTheme.Spacing.xs)
                                     .padding(.vertical, 4)
-                                    .background(Color(red: 0.0, green: 1.0, blue: 0.25))
-                                    .cornerRadius(4)
+                                    .background(Color.phosphorGreen)
+                                    .cornerRadius(AppTheme.Radius.sm)
                                 }
-                                .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                                .listRowBackground(Color.clear)
                             }
                         }
+                    } header: {
+                        Text("BONJOUR ZERO-CONF SCANNED BRIDGES")
+                            .font(AppTheme.Font.caption2(.bold))
                     }
 
                     // Manual LAN Endpoint Settings
-                    Section(header: Text("MANUAL BRIDGE ENDPOINT").font(.system(size: 10, design: .monospaced))) {
+                    Section {
                         HStack {
                             Text("MAC HOST / LAN IP")
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.footnote())
+                                .foregroundColor(Color.textSecondary)
                             Spacer()
                             TextField("e.g. 192.168.1.100", text: $settings.host)
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(.white)
+                                .font(AppTheme.Font.subheadline())
+                                .foregroundColor(.textPrimary)
                                 .multilineTextAlignment(.trailing)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled(true)
                                 .keyboardType(.numbersAndPunctuation)
+                                .textFieldStyle(.roundedBorder)
+                                .tint(Color.phosphorGreen)
                         }
-                        .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                        .listRowBackground(Color.clear)
 
                         HStack {
                             Text("BRIDGE PORT")
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.footnote())
+                                .foregroundColor(Color.textSecondary)
                             Spacer()
                             TextField("8080", value: $settings.port, formatter: NumberFormatter())
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(.white)
+                                .font(AppTheme.Font.subheadline())
+                                .foregroundColor(.textPrimary)
                                 .multilineTextAlignment(.trailing)
                                 .keyboardType(.numberPad)
+                                .textFieldStyle(.roundedBorder)
+                                .tint(Color.phosphorGreen)
                         }
-                        .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                        .listRowBackground(Color.clear)
 
                         HStack {
                             Text("BRIDGE API KEY")
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.footnote())
+                                .foregroundColor(Color.textSecondary)
                             Spacer()
                             SecureField("Optional passphrase", text: $settings.apiKey)
-                                .font(.system(size: 12, design: .monospaced))
-                                .foregroundColor(.white)
+                                .font(AppTheme.Font.subheadline())
+                                .foregroundColor(.textPrimary)
                                 .multilineTextAlignment(.trailing)
+                                .textFieldStyle(.roundedBorder)
+                                .tint(Color.phosphorGreen)
                         }
-                        .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                        .listRowBackground(Color.clear)
+                    } header: {
+                        Text("MANUAL BRIDGE ENDPOINT")
+                            .font(AppTheme.Font.caption2(.bold))
                     }
 
                     // Inference Hyperparameters
-                    Section(header: Text("INFERENCE PARAMETERS").font(.system(size: 10, design: .monospaced))) {
-                        VStack(alignment: .leading, spacing: 6) {
+                    Section {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                             HStack {
                                 Text("TEMPERATURE: \(String(format: "%.1f", settings.temperature))")
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(.white)
+                                    .font(AppTheme.Font.footnote())
+                                    .foregroundColor(.textPrimary)
                                 Spacer()
+                                Text(String(format: "%.1f", settings.temperature))
+                                    .font(AppTheme.Font.caption2(.bold))
+                                    .foregroundColor(Color.amber)
                             }
                             Slider(value: $settings.temperature, in: 0.0...1.0, step: 0.1)
-                                .accentColor(Color(red: 0.95, green: 0.49, blue: 0.15))
+                                .accentColor(Color.amber)
                         }
-                        .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                        .listRowBackground(Color.clear)
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
                             Text("DEFAULT SYSTEM INSTRUCTIONS")
-                                .font(.system(size: 10, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.caption2())
+                                .foregroundColor(Color.textSecondary)
                             TextEditor(text: $settings.systemPrompt)
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundColor(.white)
+                                .font(AppTheme.Font.caption2())
+                                .foregroundColor(.textPrimary)
                                 .frame(minHeight: 50)
+                                .background(Color.backgroundElevated)
+                                .cornerRadius(AppTheme.Radius.sm)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
+                                        .stroke(Color.borderInput, lineWidth: 1)
+                                )
                         }
-                        .listRowBackground(Color(red: 0.08, green: 0.09, blue: 0.10))
+                        .padding(.vertical, AppTheme.Spacing.xxs)
+                        .listRowBackground(Color.clear)
+                    } header: {
+                        Text("INFERENCE PARAMETERS")
+                            .font(AppTheme.Font.caption2(.bold))
                     }
                 }
                 .scrollContentBackground(.hidden)
+                .refreshable {
+                    discovery.restartBrowsing()
+                }
             }
-            .background(Color(red: 0.05, green: 0.05, blue: 0.06).ignoresSafeArea())
-            .navigationBarHidden(true)
+            .background(Color.backgroundPrimary.ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -198,13 +259,15 @@ public struct SettingsView: View {
             do {
                 let health = try await bridgeClient.checkHealth()
                 let elapsedMs = Int((CFAbsoluteTimeGetCurrent() - start) * 1000.0)
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.pingSuccess = true
                     self.pingResult = "HEALTH 200 OK • \(health.provider.uppercased()) • \(health.modelsCount) models • Latency: \(elapsedMs)ms"
                     self.isPinging = false
+                    // Connection verified — stop endlessly scanning the network.
+                    self.discovery.stopBrowsing()
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.pingSuccess = false
                     self.pingResult = "FAILED: \(error.localizedDescription)"
                     self.isPinging = false

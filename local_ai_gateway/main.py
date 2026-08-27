@@ -4,8 +4,27 @@ CLI Entrypoint and Diagnostic Utilities for Local AI Gateway.
 import sys
 import argparse
 import asyncio
+import os
 import socket
 from typing import List
+
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.panel import Panel
+    from rich.prompt import Prompt
+except ImportError:
+    Console = None
+    Table = None
+    Panel = None
+    Prompt = None
+
+
+def _get_console():
+    """Get rich console if available, otherwise use print."""
+    if Console:
+        return Console()
+    return None
 
 def run_doctor() -> int:
     """Performs full diagnostics on Python environment, dependencies, Ollama, and network."""
@@ -186,6 +205,230 @@ def run_test(prompt: str = "Explain quantum computing in one short sentence.") -
 
     return asyncio.run(execute())
 
+def cmd_models() -> int:
+    """List available models with capabilities."""
+    console = _get_console()
+    from .config import config
+    from .providers import get_provider
+
+    provider = get_provider(config.provider)
+
+    async def list_models():
+        try:
+            models = await provider.list_models()
+            if not models:
+                if console:
+                    console.print("[yellow]No models installed. Run 'ollama pull llama3.2:3b'[/yellow]")
+                else:
+                    print("[!] No models installed. Run 'ollama pull llama3.2:3b'")
+                return 1
+
+            if console and Table:
+                table = Table(title="Available Models")
+                table.add_column("Name", style="cyan")
+                table.add_column("Size", style="magenta")
+                table.add_column("Context", style="green")
+                table.add_column("Capabilities", style="blue")
+
+                for m in models:
+                    caps = []
+                    if m.capabilities.vision:
+                        caps.append("vision")
+                    if m.capabilities.tools:
+                        caps.append("tools")
+                    cap_str = ", ".join(caps) if caps else "-"
+                    table.add_row(
+                        m.name,
+                        m.size_formatted,
+                        f"{m.context_window}",
+                        cap_str,
+                    )
+                console.print(table)
+            else:
+                print("Available Models:")
+                for m in models:
+                    caps = []
+                    if m.capabilities.vision:
+                        caps.append("vision")
+                    if m.capabilities.tools:
+                        caps.append("tools")
+                    cap_str = f" [{', '.join(caps)}]" if caps else ""
+                    print(f"  - {m.name} ({m.size_formatted}){cap_str}")
+            return 0
+        except Exception as e:
+            if console:
+                console.print(f"[red]Error: {e}[/red]")
+            else:
+                print(f"Error: {e}")
+            return 1
+
+    return asyncio.run(list_models())
+ 
+ 
+def cmd_config() -> int:
+    """Show gateway configuration."""
+    console = _get_console()
+    from .config import config
+
+    config_text = f"""
+[bold]Gateway Configuration[/bold]
+
+[bold]Network:[/bold]
+  Host: {config.host}
+  Port: {config.port}
+  LAN IP: {config.lan_ip}
+  URL: http://{config.lan_ip}:{config.port}
+
+[bold]Backend:[/bold]
+  Provider: {config.provider}
+  Ollama URL: {config.ollama_url}
+  Default Model: {config.default_model}
+
+[bold]Features:[/bold]
+  Bonjour Discovery: {config.enable_bonjour}
+  Pairing Enabled: {config.enable_pairing}
+  Dashboard: {config.enable_dashboard}
+  Sessions: {config.enable_sessions}
+  Auto Routing: {config.enable_auto_routing}
+
+[bold]Security:[/bold]
+  Auth Enabled: {config.is_auth_enabled}
+  Pairing Code: {config.pairing_code}
+"""
+
+    if console and Panel:
+        console.print(Panel(config_text, title="[bold]Configuration[/bold]"))
+    else:
+        print(config_text)
+    return 0
+ 
+ 
+def cmd_stats() -> int:
+    """Show gateway statistics and health."""
+    console = _get_console()
+
+    config_text = """
+[bold]Gateway Statistics[/bold]
+
+[bold]Server Status:[/bold]
+  Uptime: N/A
+  Active Requests: N/A
+  Memory Usage: N/A
+
+[bold]Performance:[/bold]
+  Avg TTFT: N/A
+  Avg TPS: N/A
+  Completed Requests: N/A
+
+Note: Stats collection in progress. Check back after requests are made.
+"""
+
+    if console and Panel:
+        console.print(Panel(config_text, title="[bold]Statistics[/bold]"))
+    else:
+        print(config_text)
+    return 0
+ 
+ 
+def cmd_repl() -> int:
+    """Start interactive REPL for gateway management."""
+    console = _get_console()
+    if not console:
+        print("REPL requires rich library. Install with: pip install rich")
+        return 1
+
+    from .config import config
+    from .providers import get_provider
+
+    provider = get_provider(config.provider)
+
+    console.print(
+        f"\n[bold cyan]🚀 Local AI Gateway REPL[/bold cyan]\n"
+        f"Provider: {config.provider} @ {config.ollama_url}\n"
+        f"Default Model: {config.default_model}\n"
+        f"Type [bold]/help[/bold] for commands or start managing!\n"
+    )
+
+    try:
+        while True:
+            try:
+                user_input = Prompt.ask("[bold cyan]gateway[/bold cyan]")
+
+                if not user_input.strip():
+                    continue
+
+                # Handle commands
+                if user_input.startswith("/"):
+                    cmd = user_input[1:].split()[0].lower()
+                    args = user_input[1:].split()[1:]
+
+                    if cmd in ("exit", "quit"):
+                        console.print("[yellow]Goodbye![/yellow]")
+                        break
+                    elif cmd == "help":
+                        show_help()
+                    elif cmd == "models":
+                        cmd_models()
+                    elif cmd == "config":
+                        cmd_config()
+                    elif cmd == "stats":
+                        cmd_stats()
+                    elif cmd == "doctor":
+                        run_doctor()
+                    elif cmd == "test":
+                        if args:
+                            run_test(" ".join(args))
+                        else:
+                            run_test()
+                    elif cmd == "serve":
+                        console.print("[yellow]Gateway is already running. Use Ctrl+C to stop.[/yellow]")
+                    else:
+                        console.print(f"[red]Unknown command: /{cmd}[/red]")
+                else:
+                    console.print(f"[yellow]Unknown input: {user_input}[/yellow]")
+                    console.print("Type /help for available commands")
+
+            except KeyboardInterrupt:
+                console.print("\n[yellow]Interrupted. Type /exit to quit.[/yellow]")
+                continue
+
+    finally:
+        console.print("[yellow]Gateway REPL closed.[/yellow]")
+
+    return 0
+
+
+def show_help() -> None:
+    """Display help menu."""
+    help_text = """
+[bold cyan]Gateway Management Commands[/bold cyan]
+
+[bold]System[/bold]
+  /help           Display this help message
+  /exit or /quit  Exit the REPL
+
+[bold]Models[/bold]
+  /models         List available models with capabilities
+
+[bold]Configuration[/bold]
+  /config         Show current gateway configuration
+
+[bold]Diagnostics[/bold]
+  /doctor         Run full environment diagnostics
+  /test [prompt]  Test inference with local model
+
+[bold]Server[/bold]
+  /serve          Gateway is already running (use Ctrl+C to stop)
+
+[bold]Statistics[/bold]
+  /stats          Show gateway performance metrics
+"""
+    console = _get_console()
+    if console and Panel:
+        console.print(Panel(help_text, title="[bold]Help[/bold]"))
+    else:
+        print(help_text)
+
 def cli_entry():
     parser = argparse.ArgumentParser(
         prog="local-ai-gateway",
@@ -205,6 +448,15 @@ def cli_entry():
     # test command
     test_parser = subparsers.add_parser("test", help="Execute a live test completion against local model")
     test_parser.add_argument("--prompt", type=str, default="Write a haiku about Apple Silicon speed.", help="Custom test prompt")
+
+    # models command
+    subparsers.add_parser("models", help="List available models with capabilities")
+
+    # config command
+    subparsers.add_parser("config", help="Show gateway configuration")
+
+    # stats command
+    subparsers.add_parser("stats", help="Show gateway statistics and health")
 
     # mcp command
     subparsers.add_parser("mcp", help="Start the stdio Model Context Protocol (MCP) server for Claude Desktop")
@@ -230,6 +482,18 @@ def cli_entry():
 
     elif args.command == "test":
         sys.exit(run_test(args.prompt))
+
+    elif args.command == "models":
+        sys.exit(cmd_models())
+
+    elif args.command == "config":
+        sys.exit(cmd_config())
+
+    elif args.command == "stats":
+        sys.exit(cmd_stats())
+
+    elif args.command == "repl":
+        sys.exit(cmd_repl())
 
     elif args.command == "mcp":
         from .mcp.server import start_mcp_server

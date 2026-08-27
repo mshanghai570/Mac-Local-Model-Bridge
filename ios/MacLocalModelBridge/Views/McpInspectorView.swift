@@ -12,62 +12,66 @@ public struct McpInspectorView: View {
     private let tools = ["chat", "generate", "list_models", "health", "model_info"]
 
     public var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("MCP PROTOCOL INSPECTOR")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
+                            .font(AppTheme.Font.caption(.bold))
+                            .foregroundColor(.textPrimary)
                         Text("Executes tools/call over JSON-RPC 2.0 to local bridge")
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundColor(Color.gray)
+                            .font(AppTheme.Font.caption2())
+                            .foregroundColor(Color.textSecondary)
                     }
                     Spacer()
                     Text("MCP v1.0")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundColor(Color(red: 0.95, green: 0.49, blue: 0.15))
-                        .padding(.horizontal, 6)
+                        .font(AppTheme.Font.caption2(.bold))
+                        .foregroundColor(Color.amber)
+                        .padding(.horizontal, AppTheme.Spacing.xxs)
                         .padding(.vertical, 2)
-                        .background(Color(red: 0.95, green: 0.49, blue: 0.15).opacity(0.15))
-                        .cornerRadius(3)
+                        .background(Color.amber.opacity(0.15))
+                        .cornerRadius(AppTheme.Radius.xs)
                 }
-                .padding(14)
-                .background(Color(red: 0.08, green: 0.09, blue: 0.10))
-                .overlay(
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundColor(Color(red: 0.16, green: 0.17, blue: 0.18)),
-                    alignment: .bottom
-                )
+                .padding(AppTheme.Spacing.lg)
+                .background(Color.backgroundSurface)
+                .bottomSeparator()
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.md) {
                         // Tool Selector
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                             Text("SELECT MCP TOOL")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.caption2(.bold))
+                                .foregroundColor(Color.textSecondary)
 
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
+                                HStack(spacing: AppTheme.Spacing.xs) {
                                     ForEach(tools, id: \.self) { tool in
                                         Button(action: {
-                                            viewModel.selectedTool = tool
+                                            withAnimation(AppTheme.Animation.standard) {
+                                                viewModel.selectedTool = tool
+                                            }
                                         }) {
                                             Text(tool)
-                                                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                                .foregroundColor(viewModel.selectedTool == tool ? Color(red: 0.0, green: 1.0, blue: 0.25) : .white)
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(viewModel.selectedTool == tool ? Color(red: 0.15, green: 0.16, blue: 0.18) : Color(red: 0.08, green: 0.09, blue: 0.10))
-                                                .cornerRadius(4)
+                                                .font(AppTheme.Font.caption2(.bold))
+                                                .foregroundColor(viewModel.selectedTool == tool
+                                                    ? Color.backgroundPrimary
+                                                    : Color.textPrimary)
+                                                .padding(.horizontal, AppTheme.Spacing.sm)
+                                                .padding(.vertical, AppTheme.Spacing.xxs)
+                                                .background(viewModel.selectedTool == tool
+                                                    ? Color.phosphorGreen
+                                                    : Color.backgroundElevated)
+                                                .cornerRadius(AppTheme.Radius.sm)
                                                 .overlay(
-                                                    RoundedRectangle(cornerRadius: 4)
-                                                        .stroke(viewModel.selectedTool == tool ? Color(red: 0.0, green: 1.0, blue: 0.25) : Color(red: 0.16, green: 0.17, blue: 0.18), lineWidth: 1)
+                                                    RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
+                                                        .stroke(viewModel.selectedTool == tool
+                                                            ? Color.phosphorGreen
+                                                            : Color.borderColor, lineWidth: 1)
                                                 )
                                         }
+                                        .buttonStyle(.plain)
                                     }
                                 }
                             }
@@ -75,33 +79,42 @@ public struct McpInspectorView: View {
 
                         // Arguments Input
                         if viewModel.selectedTool == "chat" || viewModel.selectedTool == "generate" || viewModel.selectedTool == "model_info" {
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                                 Text("MODEL ARGUMENT")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color.gray)
+                                    .font(AppTheme.Font.caption2(.bold))
+                                    .foregroundColor(Color.textSecondary)
 
                                 TextField("Model", text: $viewModel.selectedModel)
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .foregroundColor(.white)
-                                    .padding(8)
-                                    .background(Color(red: 0.08, green: 0.09, blue: 0.10))
-                                    .cornerRadius(4)
+                                    .font(AppTheme.Font.subheadline())
+                                    .foregroundColor(.textPrimary)
+                                    .padding(AppTheme.Spacing.xs)
+                                    .background(Color.backgroundElevated)
+                                    .cornerRadius(AppTheme.Radius.sm)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
+                                            .stroke(Color.borderInput, lineWidth: 1)
+                                    )
+                                    .transition(.opacity)
                             }
                         }
 
                         if viewModel.selectedTool == "chat" || viewModel.selectedTool == "generate" {
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                                 Text("PROMPT / MESSAGE ARGUMENT")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(Color.gray)
+                                    .font(AppTheme.Font.caption2(.bold))
+                                    .foregroundColor(Color.textSecondary)
 
                                 TextEditor(text: $viewModel.promptArgument)
-                                    .font(.system(size: 12, design: .monospaced))
-                                    .foregroundColor(.white)
+                                    .font(AppTheme.Font.subheadline())
+                                    .foregroundColor(.textPrimary)
                                     .frame(minHeight: 70)
-                                    .padding(4)
-                                    .background(Color(red: 0.08, green: 0.09, blue: 0.10))
-                                    .cornerRadius(4)
+                                    .padding(AppTheme.Spacing.xs)
+                                    .background(Color.backgroundElevated)
+                                    .cornerRadius(AppTheme.Radius.sm)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: AppTheme.Radius.sm)
+                                            .stroke(Color.borderInput, lineWidth: 1)
+                                    )
                             }
                         }
 
@@ -112,49 +125,51 @@ public struct McpInspectorView: View {
                             HStack {
                                 if viewModel.isExecuting {
                                     ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                                        .progressViewStyle(CircularProgressViewStyle(tint: Color.backgroundPrimary))
                                 } else {
                                     Image(systemName: "play.fill")
                                 }
-                                Text(viewModel.isExecuting ? "EXECUTING RPC CALL..." : "INVOKE \(viewModel.selectedTool.uppercased())")
-                                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                Text(viewModel.isExecuting ? "EXECUTING RPC CALL…" : "INVOKE \(viewModel.selectedTool.uppercased())")
+                                    .font(AppTheme.Font.caption2(.bold))
                             }
-                            .foregroundColor(Color(red: 0.05, green: 0.05, blue: 0.06))
+                            .foregroundColor(Color.backgroundPrimary)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(viewModel.isExecuting ? Color.gray : Color(red: 0.0, green: 1.0, blue: 0.25))
-                            .cornerRadius(6)
+                            .padding(.vertical, AppTheme.Spacing.sm)
+                            .background(viewModel.isExecuting ? Color.textSecondary : Color.phosphorGreen)
+                            .cornerRadius(AppTheme.Radius.md)
                         }
                         .disabled(viewModel.isExecuting)
+                        .animation(AppTheme.Animation.standard, value: viewModel.isExecuting)
+                        .transition(.opacity)
 
                         // Output Terminal Result
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xs) {
                             Text("MCP TOOL RESULT // CONTENT")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(Color.gray)
+                                .font(AppTheme.Font.caption2(.bold))
+                                .foregroundColor(Color.textSecondary)
 
                             ScrollView {
                                 Text(viewModel.resultText.isEmpty ? "[NO EXECUTION RESULT]" : viewModel.resultText)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundColor(viewModel.isError ? .red : Color(red: 0.0, green: 1.0, blue: 0.25))
+                                    .font(AppTheme.Font.caption2())
+                                    .foregroundColor(viewModel.isError ? .errorRed : Color.phosphorGreen)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(10)
+                                    .padding(AppTheme.Spacing.sm)
                                     .textSelection(.enabled)
                             }
                             .frame(minHeight: 140)
-                            .background(Color(red: 0.08, green: 0.09, blue: 0.10))
-                            .cornerRadius(6)
+                            .background(Color.backgroundElevated)
+                            .cornerRadius(AppTheme.Radius.md)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(red: 0.16, green: 0.17, blue: 0.18), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: AppTheme.Radius.md)
+                                    .stroke(Color.borderColor, lineWidth: 1)
                             )
                         }
                     }
-                    .padding(14)
+                    .padding(AppTheme.Spacing.lg)
                 }
             }
-            .background(Color(red: 0.05, green: 0.05, blue: 0.06).ignoresSafeArea())
-            .navigationBarHidden(true)
+            .background(Color.backgroundPrimary.ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }

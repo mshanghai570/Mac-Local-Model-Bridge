@@ -1,25 +1,32 @@
 .PHONY: install start test doctor lint format clean mcp
 
+VENV_PYTHON := $(shell pwd)/.venv/bin/python3
+VENV_PIP := $(shell pwd)/.venv/bin/pip
+BRIDGE_CLI := $(shell pwd)/.venv/bin/bridge-cli
+
 install:
-	pip install -e ".[dev,mcp]"
+	$(VENV_PIP) install -e ".[dev,mcp]"
 
 start:
-	python3 -m local_ai_gateway.main serve
+	$(VENV_PYTHON) -m local_ai_gateway.main serve
 
 doctor:
-	python3 -m local_ai_gateway.main doctor
+	$(VENV_PYTHON) -m local_ai_gateway.main doctor
 
 test:
-	pytest tests/ -v
+	$(VENV_PYTHON) -m pytest tests/ -v
 
 lint:
-	ruff check .
+	$(VENV_PYTHON) -m ruff check .
 
 format:
-	ruff format .
+	$(VENV_PYTHON) -m ruff format .
 
 mcp:
-	python3 -m local_ai_gateway.main mcp
+	$(VENV_PYTHON) -m local_ai_gateway.main mcp
+
+cli:
+	$(BRIDGE_CLI) --list-tools
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +

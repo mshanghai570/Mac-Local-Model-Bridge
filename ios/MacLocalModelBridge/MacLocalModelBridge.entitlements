@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Allows the app to be debugged / re-signed for sideloading -->
+    <key>get-task-allow</key>
+    <true/>
+
+    <!-- Local network access for Bonjour discovery (Network.framework NWBrowser/NWConnection)
+         Required on iOS 14+ for apps using NSBonjourServices / local network. -->
+    <key>com.apple.developer.networking.local-network</key>
+    <true/>
+
+    <!-- Wi-Fi info access (used for reading interface details during discovery) -->
+    <key>com.apple.developer.networking.WiFiInfo</key>
+    <true/>
+</dict>
+</plist>

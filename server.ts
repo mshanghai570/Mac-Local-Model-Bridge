@@ -153,7 +153,7 @@ async function startServer() {
 
   // 6. Chat Endpoint with optional SSE Streaming
   app.post('/api/bridge/chat', async (req: Request, res: Response) => {
-    const { model = 'llama3.2:3b', messages = [], temperature = 0.7, stream = false } = req.body;
+    const { model = 'llama3.2:3b', messages = [], temperature = 0.7, stream = false, tools = [] } = req.body;
     const userMsg = messages[messages.length - 1]?.content || 'Hello';
 
     if (stream || req.headers.accept === 'text/event-stream') {
@@ -161,6 +161,41 @@ async function startServer() {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       res.flushHeaders();
+
+      const hasTools = Array.isArray(tools) && tools.length > 0;
+      const lowerPrompt = userMsg.toLowerCase();
+      const wantsFile = hasTools && (lowerPrompt.includes('read') || lowerPrompt.includes('file') || lowerPrompt.includes('list') || lowerPrompt.includes('directory'));
+
+      if (hasTools && wantsFile) {
+        const toolCallId = 'call_' + Math.random().toString(36).slice(2, 10);
+        const toolName = lowerPrompt.includes('list') ? 'list_directory' : 'read_file';
+        const fakePath = lowerPrompt.includes('project') || lowerPrompt.includes('code')
+          ? '/Users/michaelshingara/Documents/remix-mac-local-ai-gateway-for-iphone'
+          : '/tmp';
+
+        const toolCallChunk = {
+          model,
+          role: 'assistant',
+          content: null,
+          tool_calls: [
+            {
+              id: toolCallId,
+              type: 'function',
+              function: {
+                name: toolName,
+                arguments: JSON.stringify({ path: fakePath })
+              }
+            }
+          ],
+          done: true,
+          finish_reason: 'tool_calls'
+        };
+
+        res.write(`data: ${JSON.stringify(toolCallChunk)}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+        return;
+      }
 
       const sampleResponse = `[Mac Local Model: ${model}] Response streamed from local Ollama runtime to iPhone via Bridge:
 
@@ -186,7 +221,11 @@ Based on your prompt: "${userMsg.slice(0, 80)}..."
       res.write('data: [DONE]\n\n');
       res.end();
     } else {
-      res.json({
+      const hasTools = Array.isArray(tools) && tools.length > 0;
+      const lowerPrompt = userMsg.toLowerCase();
+      const wantsFile = hasTools && (lowerPrompt.includes('read') || lowerPrompt.includes('file') || lowerPrompt.includes('list') || lowerPrompt.includes('directory'));
+
+      const response: any = {
         model,
         role: 'assistant',
         content: `[Mac Local Model: ${model}] Computed securely on your MacBook and returned over local Wi-Fi to your iPhone.`,
@@ -194,7 +233,162 @@ Based on your prompt: "${userMsg.slice(0, 80)}..."
         total_duration: 420000000,
         eval_count: 32,
         eval_duration: 380000000
-      });
+      };
+
+      if (hasTools && wantsFile) {
+        response.tool_calls = [
+          {
+            id: 'call_' + Math.random().toString(36).slice(2, 10),
+            type: 'function',
+            function: {
+              name: lowerPrompt.includes('list') ? 'list_directory' : 'read_file',
+              arguments: JSON.stringify({ path: '/tmp' })
+            }
+          }
+        ];
+        response.finish_reason = 'tool_calls';
+        response.content = null;
+      }
+
+      res.json(response);
+    }
+  });
+
+  // 6b. OpenAI-compatible /v1/chat/completions
+  app.post('/v1/chat/completions', async (req: Request, res: Response) => {
+    const { model = 'auto', messages = [], stream = false, tools = [] } = req.body;
+    const userMsg = messages[messages.length - 1]?.content || 'Hello';
+
+    if (stream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      const hasTools = Array.isArray(tools) && tools.length > 0;
+      const lowerPrompt = userMsg.toLowerCase();
+      const wantsFile = hasTools && (lowerPrompt.includes('read') || lowerPrompt.includes('file') || lowerPrompt.includes('list') || lowerPrompt.includes('directory'));
+
+      if (hasTools && wantsFile) {
+        const toolCallId = 'call_' + Math.random().toString(36).slice(2, 10);
+        const toolName = lowerPrompt.includes('list') ? 'list_directory' : 'read_file';
+        const fakePath = lowerPrompt.includes('project') || lowerPrompt.includes('code')
+          ? '/Users/michaelshingara/Documents/remix-mac-local-ai-gateway-for-iphone'
+          : '/tmp';
+
+        const chunk = {
+          id: 'chatcmpl-' + Math.random().toString(36).slice(2, 14),
+          object: 'chat.completion.chunk',
+          created: Math.floor(Date.now() / 1000),
+          model,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                role: 'assistant',
+                content: null,
+                tool_calls: [
+                  {
+                    id: toolCallId,
+                    type: 'function',
+                    function: {
+                      name: toolName,
+                      arguments: JSON.stringify({ path: fakePath })
+                    }
+                  }
+                ]
+              },
+              finish_reason: 'tool_calls'
+            }
+          ]
+        };
+
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+        return;
+      }
+
+      const sampleResponse = `Response from ${model}: ${userMsg.slice(0, 60)}...`;
+      const words = sampleResponse.split(' ');
+      const chunkId = 'chatcmpl-' + Math.random().toString(36).slice(2, 14);
+      const created = Math.floor(Date.now() / 1000);
+
+      res.write(`data: ${JSON.stringify({
+        id: chunkId,
+        object: 'chat.completion.chunk',
+        created,
+        model,
+        choices: [{ index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }]
+      })}\n\n`);
+
+      for (let i = 0; i < words.length; i++) {
+        const piece = words[i] + (i === words.length - 1 ? '' : ' ');
+        res.write(`data: ${JSON.stringify({
+          id: chunkId,
+          object: 'chat.completion.chunk',
+          created,
+          model,
+          choices: [{ index: 0, delta: { content: piece }, finish_reason: null }]
+        })}\n\n`);
+        await new Promise(resolve => setTimeout(resolve, 40));
+      }
+
+      res.write(`data: ${JSON.stringify({
+        id: chunkId,
+        object: 'chat.completion.chunk',
+        created,
+        model,
+        choices: [{ index: 0, delta: {}, finish_reason: 'stop' }]
+      })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } else {
+      const hasTools = Array.isArray(tools) && tools.length > 0;
+      const lowerPrompt = userMsg.toLowerCase();
+      const wantsFile = hasTools && (lowerPrompt.includes('read') || lowerPrompt.includes('file') || lowerPrompt.includes('list') || lowerPrompt.includes('directory'));
+
+      const response: any = {
+        id: 'chatcmpl-' + Math.random().toString(36).slice(2, 14),
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: `[Mock] Response from ${model}: ${userMsg.slice(0, 80)}...`
+            },
+            finish_reason: 'stop'
+          }
+        ],
+        usage: {
+          prompt_tokens: userMsg.split(' ').length,
+          completion_tokens: 32,
+          total_tokens: userMsg.split(' ').length + 32
+        }
+      };
+
+      if (hasTools && wantsFile) {
+        response.choices[0].message = {
+          role: 'assistant',
+          content: null,
+          tool_calls: [
+            {
+              id: 'call_' + Math.random().toString(36).slice(2, 10),
+              type: 'function',
+              function: {
+                name: lowerPrompt.includes('list') ? 'list_directory' : 'read_file',
+                arguments: JSON.stringify({ path: '/tmp' })
+              }
+            }
+          ]
+        };
+        response.choices[0].finish_reason = 'tool_calls';
+      }
+
+      res.json(response);
     }
   });
 

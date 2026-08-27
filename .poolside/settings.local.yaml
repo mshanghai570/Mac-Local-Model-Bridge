@@ -1,0 +1,35 @@
+tools:
+    shell:
+        allow:
+            - ls *
+            - find *
+            - head *
+            - cd *
+            - git status
+            - echo *
+            - git log *
+            - .venv/bin/python *
+            - tail *
+            - which node
+            - node *
+            - which npm
+            - npm *
+            - which bun
+            - bun *
+            - which xcodebuild
+            - xcodebuild *
+            - which ollama
+            - ollama *
+            - which python3
+            - python3 *
+            - which curl
+            - curl *
+            - cat *
+            - grep *
+            - sleep 5
+            - timeout 60 *
+            - sleep 6
+            - npx vite build *
+            - npx vite *
+            - xcrun simctl list devices *
+            - xcrun simctl create "iPhone 16" *
