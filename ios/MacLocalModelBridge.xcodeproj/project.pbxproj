@@ -30,7 +30,11 @@
 		110000142C1A000100000001 /* DeviceModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000162C1A000100000001 /* DeviceModelStore.swift */; };
 		110000172C1A000100000001 /* ReasoningStreamParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000172C1A000100000001 /* ReasoningStreamParser.swift */; };
 		110000152C1A000100000001 /* LocalInferenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000152C1A000100000001 /* LocalInferenceEngine.swift */; };
-		110000192C1A000100000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000192C1A000100000001 /* AppTheme.swift */; };
+					110000192C1A000100000001 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 220000192C1A000100000001 /* AppTheme.swift */; };
+			1100001A2C1A000100000001 /* KeychainSecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200001A2C1A000100000001 /* KeychainSecretStore.swift */; };
+			1100001B2C1A000100000001 /* MacRuntimeBridgeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200001B2C1A000100000001 /* MacRuntimeBridgeClient.swift */; };
+			1100001C2C1A000100000001 /* MacStoredModelRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2200001C2C1A000100000001 /* MacStoredModelRowView.swift */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,7 +74,11 @@
 		220000162C1A000100000001 /* DeviceModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceModelStore.swift; sourceTree = "<group>"; };
 		220000172C1A000100000001 /* ReasoningStreamParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReasoningStreamParser.swift; sourceTree = "<group>"; };
 		220000152C1A000100000001 /* LocalInferenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalInferenceEngine.swift; sourceTree = "<group>"; };
-		220000192C1A000100000001 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+					220000192C1A000100000001 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+			2200001A2C1A000100000001 /* KeychainSecretStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainSecretStore.swift; sourceTree = "<group>"; };
+			2200001B2C1A000100000001 /* MacRuntimeBridgeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacRuntimeBridgeClient.swift; sourceTree = "<group>"; };
+			2200001C2C1A000100000001 /* MacStoredModelRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacStoredModelRowView.swift; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,8 +140,11 @@
 			children = (
 				220000052C1A000100000001 /* BonjourDiscoveryManager.swift */,
 				220000062C1A000100000001 /* BridgeClient.swift */,
-				220000072C1A000100000001 /* SettingsManager.swift */,
-				220000162C1A000100000001 /* DeviceModelStore.swift */,
+									220000072C1A000100000001 /* SettingsManager.swift */,
+					2200001A2C1A000100000001 /* KeychainSecretStore.swift */,
+					2200001B2C1A000100000001 /* MacRuntimeBridgeClient.swift */,
+					220000162C1A000100000001 /* DeviceModelStore.swift */,
+
 				220000172C1A000100000001 /* ReasoningStreamParser.swift */,
 				220000152C1A000100000001 /* LocalInferenceEngine.swift */,
 				220000182C1A000100000001 /* PhoneHttpServer.swift */,
@@ -157,8 +168,10 @@
 				2200000B2C1A000100000001 /* ChatView.swift */,
 				2200000C2C1A000100000001 /* McpInspectorView.swift */,
 				2200000D2C1A000100000001 /* ModelsListView.swift */,
-				2200000E2C1A000100000001 /* SettingsView.swift */,
-				550000072C1A000100000001 /* Components */,
+									2200000E2C1A000100000001 /* SettingsView.swift */,
+					2200001C2C1A000100000001 /* MacStoredModelRowView.swift */,
+					550000072C1A000100000001 /* Components */,
+
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -306,8 +319,12 @@
 				110000172C1A000100000001 /* ReasoningStreamParser.swift in Sources */,
 				110000152C1A000100000001 /* LocalInferenceEngine.swift in Sources */,
 				110000182C1A000100000001 /* PhoneHttpServer.swift in Sources */,
-				110000192C1A000100000001 /* AppTheme.swift in Sources */,
-			);
+									110000192C1A000100000001 /* AppTheme.swift in Sources */,
+					1100001A2C1A000100000001 /* KeychainSecretStore.swift in Sources */,
+					1100001B2C1A000100000001 /* MacRuntimeBridgeClient.swift in Sources */,
+					1100001C2C1A000100000001 /* MacStoredModelRowView.swift in Sources */,
+				);
+
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		990000022C1A000100000001 /* Sources */ = {
