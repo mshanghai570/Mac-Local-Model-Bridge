@@ -3,6 +3,9 @@ Unit and integration test suite for Local AI Gateway.
 """
 import unittest
 import time
+import tempfile
+import os
+from pathlib import Path
 from local_ai_gateway.config import GatewayConfig, ConfigurationError
 from local_ai_gateway.auth import verify_token, extract_api_key, mask_api_key, DeviceManager
 from local_ai_gateway.router import ModelRouter
@@ -41,24 +44,40 @@ class TestGateway(unittest.TestCase):
         self.assertEqual(extract_api_key({}, query_params=params), "query-param-token")
 
     def test_device_pairing_flow(self):
-        dm = DeviceManager()
-        code = dm.generate_pairing_code(ttl_seconds=60)
-        self.assertEqual(len(code), 6)
+        with tempfile.TemporaryDirectory() as directory:
+            dm = DeviceManager(state_path=Path(directory) / "devices.json")
+            code = dm.generate_pairing_code(ttl_seconds=60)
+            self.assertEqual(len(code), 6)
 
-        # Exchange pairing code
-        exchanged = dm.exchange_pairing_code(code, "iPhone 15 Pro")
-        self.assertIn("device_id", exchanged)
-        self.assertIn("device_token", exchanged)
-        self.assertEqual(exchanged["name"], "iPhone 15 Pro")
+            # Exchange pairing code
+            exchanged = dm.exchange_pairing_code(code, "iPhone 15 Pro")
+            self.assertIn("device_id", exchanged)
+            self.assertIn("device_token", exchanged)
+            self.assertEqual(exchanged["name"], "iPhone 15 Pro")
 
-        # Test listing devices
-        devs = dm.list_devices()
-        self.assertEqual(len(devs), 1)
-        self.assertEqual(devs[0]["name"], "iPhone 15 Pro")
+            # Test listing devices
+            devs = dm.list_devices()
+            self.assertEqual(len(devs), 1)
+            self.assertEqual(devs[0]["name"], "iPhone 15 Pro")
 
-        # Test revocation
-        self.assertTrue(dm.revoke_device(exchanged["device_id"]))
-        self.assertEqual(len(dm.list_devices()), 0)
+            # Test revocation
+            self.assertTrue(dm.revoke_device(exchanged["device_id"]))
+            self.assertEqual(len(dm.list_devices()), 0)
+
+    def test_paired_device_token_persists_as_hash_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "devices.json"
+            dm = DeviceManager(state_path=state_path)
+            code = dm.generate_pairing_code()
+            issued = dm.exchange_pairing_code(code, "Bridge Phone")
+            self.assertTrue(dm.verify_paired_device_token(issued["device_token"]))
+
+            reloaded = DeviceManager(state_path=state_path)
+            self.assertTrue(reloaded.verify_paired_device_token(issued["device_token"]))
+            persisted = state_path.read_text(encoding="utf-8")
+            self.assertNotIn(issued["device_token"], persisted)
+            self.assertIn(issued["device_id"], persisted)
+            self.assertEqual(os.stat(state_path).st_mode & 0o777, 0o600)
 
     def test_model_router_and_capabilities(self):
         router = ModelRouter()
@@ -226,33 +245,33 @@ class TestGateway(unittest.TestCase):
 
     def test_device_pairing_and_open_auth(self):
         from local_ai_gateway.auth import DeviceManager, mask_api_key
-        from local_ai_gateway.config import GatewayConfig
 
         # Open Auth mode (no API key configured)
-        dm = DeviceManager()
-        self.assertTrue(dm.verify_token(None))
-        self.assertTrue(dm.verify_token(""))
-        self.assertTrue(dm.verify_token("any-token-passes-in-dev"))
+        with tempfile.TemporaryDirectory() as directory:
+            dm = DeviceManager(state_path=Path(directory) / "devices.json")
+            self.assertTrue(dm.verify_token(None))
+            self.assertTrue(dm.verify_token(""))
+            self.assertTrue(dm.verify_token("any-token-passes-in-dev"))
 
-        # Masking utility
-        self.assertEqual(mask_api_key(None), "[UNCONFIGURED]")
-        self.assertEqual(mask_api_key(""), "[UNCONFIGURED]")
-        self.assertEqual(mask_api_key("12345"), "******")
-        self.assertEqual(mask_api_key("secret_token_123456"), "sec****456")
+            # Masking utility
+            self.assertEqual(mask_api_key(None), "[UNCONFIGURED]")
+            self.assertEqual(mask_api_key(""), "[UNCONFIGURED]")
+            self.assertEqual(mask_api_key("12345"), "******")
+            self.assertEqual(mask_api_key("secret_token_123456"), "sec****456")
 
-        # Dynamic temporary single-use pairing code
-        code = dm.generate_pairing_code(ttl_seconds=60)
-        self.assertEqual(len(code), 6)
-        
-        # Exchange pairing code for scoped device token
-        res = dm.exchange_pairing_code(code, "iPhone 15 Pro")
-        self.assertIn("device_token", res)
-        self.assertIn("device_id", res)
-        self.assertTrue(res["device_token"].startswith("gw_dev_"))
+            # Dynamic temporary single-use pairing code
+            code = dm.generate_pairing_code(ttl_seconds=60)
+            self.assertEqual(len(code), 6)
 
-        # Single-use: Second exchange with same code must fail
-        with self.assertRaises(Exception):
-            dm.exchange_pairing_code(code, "Attacker")
+            # Exchange pairing code for scoped device token
+            res = dm.exchange_pairing_code(code, "iPhone 15 Pro")
+            self.assertIn("device_token", res)
+            self.assertIn("device_id", res)
+            self.assertTrue(res["device_token"].startswith("gw_dev_"))
+
+            # Single-use: Second exchange with same code must fail
+            with self.assertRaises(Exception):
+                dm.exchange_pairing_code(code, "Attacker")
 
 if __name__ == "__main__":
     unittest.main()

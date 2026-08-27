@@ -13,6 +13,9 @@ public struct SettingsView: View {
     @State private var pingResult: String? = nil
     @State private var isPinging: Bool = false
     @State private var pingSuccess: Bool = false
+    @State private var pairingCode: String = ""
+    @State private var pairingResult: String? = nil
+    @State private var isPairing: Bool = false
 
     public var body: some View {
         NavigationStack {
@@ -200,6 +203,62 @@ public struct SettingsView: View {
                             .font(AppTheme.Font.caption2(.bold))
                     }
 
+                    // Explicit paired-device authorization for model transfer and runtime control.
+                    Section {
+                        HStack {
+                            Text("MAC PAIRING CODE")
+                                .font(AppTheme.Font.footnote())
+                                .foregroundColor(Color.textSecondary)
+                            Spacer()
+                            SecureField("6-character code", text: $pairingCode)
+                                .font(AppTheme.Font.subheadline())
+                                .foregroundColor(.textPrimary)
+                                .multilineTextAlignment(.trailing)
+                                .textInputAutocapitalization(.characters)
+                                .autocorrectionDisabled(true)
+                                .textFieldStyle(.roundedBorder)
+                                .tint(Color.phosphorGreen)
+                        }
+                        .listRowBackground(Color.clear)
+
+                        Button(action: pairDevice) {
+                            HStack {
+                                if isPairing { ProgressView().controlSize(.small) }
+                                Text(isPairing ? "PAIRING…" : "PAIR THIS IPHONE")
+                            }
+                            .font(AppTheme.Font.caption(.bold))
+                            .foregroundColor(Color.phosphorGreen)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .disabled(isPairing || pairingCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .listRowBackground(Color.clear)
+
+                        if let pairingResult {
+                            Text(pairingResult)
+                                .font(AppTheme.Font.caption2())
+                                .foregroundColor(pairingResult.hasPrefix("PAIRED") ? Color.successGreen : .errorRed)
+                                .listRowBackground(Color.clear)
+                        }
+                    } header: {
+                        Text("SECURE MODEL BRIDGE PAIRING")
+                            .font(AppTheme.Font.caption2(.bold))
+                    } footer: {
+                        Text("On the Mac, generate a short-lived pairing code with `local-ai-gateway pair`. The paired token is stored in the iPhone Keychain.")
+                            .font(AppTheme.Font.caption2())
+                    }
+
+                    // Optional legacy fallback, kept separate from the recommended Mac runtime path.
+                    Section {
+                        Toggle("ENABLE ON-DEVICE FALLBACK", isOn: $settings.enableDirectInference)
+                            .font(AppTheme.Font.caption(.bold))
+                            .foregroundColor(.textPrimary)
+                            .tint(Color.amber)
+                            .listRowBackground(Color.clear)
+                    } footer: {
+                        Text("Off by default. Enable only when you deliberately want this iPhone to host direct GGUF inference for the legacy Mac client.")
+                            .font(AppTheme.Font.caption2())
+                    }
+
                     // Inference Hyperparameters
                     Section {
                         VStack(alignment: .leading, spacing: AppTheme.Spacing.xxs) {
@@ -248,6 +307,27 @@ public struct SettingsView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
         }
         .navigationViewStyle(StackNavigationViewStyle())
+    }
+
+    private func pairDevice() {
+        isPairing = true
+        pairingResult = nil
+        let code = pairingCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        Task {
+            do {
+                try await MacRuntimeBridgeClient().pair(code: code)
+                await MainActor.run {
+                    pairingCode = ""
+                    pairingResult = "PAIRED: this iPhone can now manage Mac model transfers and runtime."
+                    isPairing = false
+                }
+            } catch {
+                await MainActor.run {
+                    pairingResult = "PAIRING FAILED: \(error.localizedDescription)"
+                    isPairing = false
+                }
+            }
+        }
     }
 
     private func testConnection() {

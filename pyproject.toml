@@ -58,6 +58,7 @@ dev = [
 
 [project.scripts]
 local-ai-gateway = "local_ai_gateway.main:cli_entry"
+bridge = "cli.bridge_runtime:main"
 bridge-cli = "cli.mac_cli:main"
 
 [tool.setuptools.packages.find]

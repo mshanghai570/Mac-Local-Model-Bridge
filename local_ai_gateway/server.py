@@ -16,6 +16,7 @@ from .providers import get_provider, close_all_providers
 from .discovery.bonjour import BonjourAdvertiser
 from .api.rest import router as rest_router
 from .api.openai_compat import openai_router
+from .api.bridge_models import bridge_models_router
 from .web.dashboard import get_dashboard_html
 from .errors import GatewayError, format_error_response
 
@@ -52,7 +53,7 @@ async def lifespan(app: FastAPI):
     pairing_desc = f"{config.pairing_code} (Auto-generated secure code)" if config.is_pairing_code_generated else f"{config.pairing_code} (Static configured)"
 
     print("=" * 68)
-    print("  ⚡ Local AI Gateway (Apple Silicon Inference Bridge)")
+    print("  Local AI Gateway (Mac Local Inference Bridge)")
     print("=" * 68)
     print(f"  • Gateway Binding:   http://{config.host}:{config.port}")
     print(f"  • Local Loopback:    {config.local_url}")
@@ -164,6 +165,7 @@ def create_app() -> FastAPI:
     # 4. Mount REST and OpenAI Routes
     app.include_router(rest_router)
     app.include_router(openai_router)
+    app.include_router(bridge_models_router)
 
     # 5. Root Dashboard Route
     @app.get("/", response_class=HTMLResponse)

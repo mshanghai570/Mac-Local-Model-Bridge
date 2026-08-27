@@ -25,6 +25,13 @@ public struct ModelsListView: View {
     @State private var importError: String? = nil
     @State private var loadingModelName: String? = nil
     @State private var loadedModelName: String? = nil
+    @State private var macModels: [MacStoredModel] = []
+    @State private var macRuntime: MacRuntimeStatus? = nil
+    @State private var isLoadingMacModels = false
+    @State private var macError: String? = nil
+    @State private var transferringModelName: String? = nil
+    @State private var activeTransferID: String? = nil
+    @State private var transferProgress: Double = 0
 
     public var body: some View {
         NavigationStack {
@@ -45,7 +52,7 @@ public struct ModelsListView: View {
 
                     if section == .mac {
                         Button(action: {
-                            Task { await viewModel.loadModels() }
+                            Task { await refreshMacModels() }
                         }) {
                             Image(systemName: "arrow.clockwise")
                                 .foregroundColor(Color.phosphorGreen)
@@ -91,13 +98,15 @@ public struct ModelsListView: View {
             }
             .background(Color.backgroundPrimary.ignoresSafeArea())
             .toolbarBackground(.hidden, for: .navigationBar)
-            .task {
+                            .task {
                 refreshDeviceModels()
+                await refreshMacModels()
             }
+
             .onChange(of: section) { newSection in
                 withAnimation(AppTheme.Animation.standard) {
                     if newSection == .mac {
-                        Task { await viewModel.loadModels() }
+                        Task { await refreshMacModels() }
                     } else {
                         refreshDeviceModels()
                     }
@@ -131,16 +140,16 @@ public struct ModelsListView: View {
 
     @ViewBuilder
     private var macModelsSection: some View {
-        if viewModel.isLoading {
+        if isLoadingMacModels {
             Spacer()
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: Color.phosphorGreen))
-            Text("Fetching local models from Mac…")
+            Text("Fetching verified GGUF models from Mac…")
                 .font(AppTheme.Font.caption2())
                 .foregroundColor(Color.textSecondary)
                 .padding(.top, AppTheme.Spacing.xs)
             Spacer()
-        } else if let error = viewModel.errorMessage {
+        } else if let error = macError {
             Spacer()
             VStack(spacing: AppTheme.Spacing.xs) {
                 Image(systemName: "exclamationmark.triangle")
@@ -152,7 +161,7 @@ public struct ModelsListView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
                 Button("RETRY") {
-                    Task { await viewModel.loadModels() }
+                    Task { await refreshMacModels() }
                 }
                 .font(AppTheme.Font.caption(.bold))
                 .foregroundColor(Color.backgroundPrimary)
@@ -164,16 +173,16 @@ public struct ModelsListView: View {
             .padding()
             .transition(.opacity)
             Spacer()
-        } else if viewModel.models.isEmpty {
+        } else if macModels.isEmpty {
             Spacer()
             VStack(spacing: AppTheme.Spacing.sm) {
                 Image(systemName: "server.rack")
                     .font(.system(size: 28))
                     .foregroundColor(Color.phosphorGreen)
-                Text("No Mac models discovered")
+                Text("No verified Mac GGUF models")
                     .font(AppTheme.Font.body(.bold))
                     .foregroundColor(.textPrimary)
-                Text("Make sure the gateway is running on your Mac,\nthen pull to refresh.")
+                Text("Pair this iPhone in Connection, then send an on-device GGUF model to your Mac.")
                     .font(AppTheme.Font.caption2())
                     .foregroundColor(Color.textSecondary)
                     .multilineTextAlignment(.center)
@@ -182,20 +191,24 @@ public struct ModelsListView: View {
             Spacer()
         } else {
             List {
-                ForEach(viewModel.models) { model in
-                    ModelRowView(
-                        model: model,
-                        isActive: settings.defaultModel == model.name,
-                        onSetActive: { settings.defaultModel = model.name }
-                    )
-                    .listRowBackground(Color.clear)
+                Section {
+                    ForEach(macModels) { model in
+                        MacStoredModelRowView(
+                            model: model,
+                            isRuntimeModel: macRuntime?.modelSHA256 == model.sha256,
+                            runtimeRunning: macRuntime?.running == true,
+                            onSelect: { selectMacModel(model) },
+                            onStart: { startMacModel(model) },
+                            onStop: { stopMacRuntime() }
+                        )
+                        .listRowBackground(Color.clear)
+                    }
+                } header: {
+                    Text(macRuntime?.running == true ? "INTEL CPU RUNTIME RUNNING" : "INTEL CPU RUNTIME STOPPED")
                 }
-                .onDelete(perform: nil)
             }
             .listStyle(PlainListStyle())
-            .refreshable {
-                Task { await viewModel.loadModels() }
-            }
+            .refreshable { await refreshMacModels() }
             .scrollContentBackground(.hidden)
             .background(Color.backgroundSurface)
         }
@@ -268,10 +281,14 @@ public struct ModelsListView: View {
                         model: model,
                         isLoading: loadingModelName == model.name,
                         isLoaded: loadedModelName == model.name,
+                        isTransferring: transferringModelName == model.name,
+                        transferProgress: transferProgress,
                         onLoaded: { loadedModelName = $0 },
                         onLoadingStart: { loadingModelName = $0 },
                         onLoadingEnd: { _ in loadingModelName = nil },
                         onLoad: { loadDeviceModel(model) },
+                        onTransfer: { transferDeviceModel(model) },
+                        onCancelTransfer: { cancelActiveTransfer() },
                         onDelete: { deleteDeviceModel(model) }
                     )
                     .listRowBackground(Color.clear)
@@ -287,6 +304,111 @@ public struct ModelsListView: View {
     }
 
     // MARK: - Device Model Actions
+
+    private func refreshMacModels() async {
+        isLoadingMacModels = true
+        macError = nil
+        do {
+            let client = MacRuntimeBridgeClient()
+            let fetched = try await client.listModels()
+            let status = try? await client.runtimeStatus()
+            await MainActor.run {
+                macModels = fetched
+                macRuntime = status
+                isLoadingMacModels = false
+            }
+        } catch {
+            await MainActor.run {
+                macError = error.localizedDescription
+                isLoadingMacModels = false
+            }
+        }
+    }
+
+    private func transferDeviceModel(_ model: DeviceModel) {
+        transferringModelName = model.name
+        transferProgress = 0
+        importError = nil
+        Task {
+            do {
+                let sent = try await MacRuntimeBridgeClient().upload(
+                    model: model,
+                    progress: { fraction in
+                        await MainActor.run { transferProgress = fraction }
+                    },
+                    transferStarted: { transferID in
+                        await MainActor.run { activeTransferID = transferID }
+                    }
+                )
+                await MainActor.run {
+                    transferringModelName = nil
+                    activeTransferID = nil
+                    transferProgress = 1
+                    section = .mac
+                    macModels = (macModels.filter { $0.sha256 != sent.sha256 } + [sent])
+                        .sorted { $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending }
+                }
+                await refreshMacModels()
+            } catch {
+                await MainActor.run {
+                    importError = "Mac transfer failed: \(error.localizedDescription)"
+                    transferringModelName = nil
+                    activeTransferID = nil
+                }
+            }
+        }
+    }
+
+    private func cancelActiveTransfer() {
+        guard let transferID = activeTransferID else { return }
+        Task {
+            do {
+                _ = try await MacRuntimeBridgeClient().cancel(transferID: transferID)
+                await MainActor.run {
+                    importError = "Mac transfer cancelled. Use SEND TO MAC again to resume from the saved offset."
+                    transferringModelName = nil
+                    activeTransferID = nil
+                }
+            } catch {
+                await MainActor.run { importError = "Could not cancel Mac transfer: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    private func selectMacModel(_ model: MacStoredModel) {
+        Task {
+            do {
+                _ = try await MacRuntimeBridgeClient().select(model: model)
+                await MainActor.run { settings.defaultModel = model.filename }
+                await refreshMacModels()
+            } catch {
+                await MainActor.run { macError = "Could not select Mac model: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    private func startMacModel(_ model: MacStoredModel) {
+        Task {
+            do {
+                _ = try await MacRuntimeBridgeClient().start(model: model)
+                await MainActor.run { settings.defaultModel = model.filename }
+                await refreshMacModels()
+            } catch {
+                await MainActor.run { macError = "Could not start Intel runtime: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    private func stopMacRuntime() {
+        Task {
+            do {
+                _ = try await MacRuntimeBridgeClient().stop()
+                await refreshMacModels()
+            } catch {
+                await MainActor.run { macError = "Could not stop Intel runtime: \(error.localizedDescription)" }
+            }
+        }
+    }
 
     private func refreshDeviceModels() {
         deviceModels = DeviceModelStore.shared.installedModels()
@@ -430,10 +552,14 @@ struct DeviceModelRowView: View {
     let model: DeviceModel
     let isLoading: Bool
     let isLoaded: Bool
+    let isTransferring: Bool
+    let transferProgress: Double
     let onLoaded: (String) -> Void
     let onLoadingStart: (String) -> Void
     let onLoadingEnd: (String) -> Void
     let onLoad: () -> Void
+    let onTransfer: () -> Void
+    let onCancelTransfer: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -452,13 +578,18 @@ struct DeviceModelRowView: View {
                 .font(AppTheme.Font.caption2())
                 .foregroundColor(Color.amber)
 
-            if isLoading {
+                        if isLoading || isTransferring {
                 HStack(spacing: AppTheme.Spacing.xs) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("LOADING INTO MEMORY…")
+                    Text(isTransferring ? "SENDING TO MAC \(Int(transferProgress * 100))%…" : "LOADING INTO MEMORY…")
                         .font(AppTheme.Font.caption2(.bold))
                         .foregroundColor(Color.textSecondary)
+                    if isTransferring {
+                        Button("CANCEL", action: onCancelTransfer)
+                            .font(AppTheme.Font.caption2(.bold))
+                            .foregroundColor(.errorRed)
+                    }
                 }
                 .padding(.top, AppTheme.Spacing.xxs)
             } else {
@@ -467,6 +598,17 @@ struct DeviceModelRowView: View {
                         Text("LOAD")
                             .font(AppTheme.Font.caption(.bold))
                             .foregroundColor(Color.phosphorGreen)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppTheme.Spacing.xxs)
+                            .background(Color.backgroundElevated)
+                            .cornerRadius(AppTheme.Radius.sm)
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: onTransfer) {
+                        Text("SEND TO MAC")
+                            .font(AppTheme.Font.caption(.bold))
+                            .foregroundColor(Color.electricBlue)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppTheme.Spacing.xxs)
                             .background(Color.backgroundElevated)
@@ -487,6 +629,7 @@ struct DeviceModelRowView: View {
                 }
                 .padding(.top, AppTheme.Spacing.xxs)
             }
+
         }
         .padding(.vertical, AppTheme.Spacing.xxs)
     }

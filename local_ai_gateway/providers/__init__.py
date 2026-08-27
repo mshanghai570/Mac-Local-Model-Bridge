@@ -4,9 +4,12 @@ Provider registry and factory for Local AI Gateway.
 from typing import Dict, Type
 from .base import BaseModelProvider
 from .ollama import OllamaProvider
+from .llama_cpp import LlamaCppProvider
 
 _PROVIDERS: Dict[str, Type[BaseModelProvider]] = {
     "ollama": OllamaProvider,
+    "llama_cpp": LlamaCppProvider,
+    "llama.cpp": LlamaCppProvider,
 }
 
 _INSTANCES: Dict[str, BaseModelProvider] = {}

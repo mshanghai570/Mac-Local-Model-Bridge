@@ -27,9 +27,11 @@ struct MacLocalModelBridgeApp: App {
                     if settings.autoDiscover {
                         discovery.startBrowsing()
                     }
-                    // Configure server for direct inference mode (iPhone powers the models)
-                    PhoneHttpServer.shared.mode = .directInference
-                    PhoneHttpServer.shared.start(port: settings.serverPort)
+                    // Mac inference is the default. Keep the legacy phone engine available only as an explicit fallback.
+                    if settings.enableDirectInference {
+                        PhoneHttpServer.shared.mode = .directInference
+                        PhoneHttpServer.shared.start(port: settings.serverPort)
+                    }
                 }
                 .onDisappear {
                     discovery.stopBrowsing()
@@ -40,6 +42,14 @@ struct MacLocalModelBridgeApp: App {
                         discovery.startBrowsing()
                     } else {
                         discovery.stopBrowsing()
+                    }
+                }
+                .onChange(of: settings.enableDirectInference) { enabled in
+                    if enabled {
+                        PhoneHttpServer.shared.mode = .directInference
+                        PhoneHttpServer.shared.start(port: settings.serverPort)
+                    } else {
+                        PhoneHttpServer.shared.stop()
                     }
                 }
         }

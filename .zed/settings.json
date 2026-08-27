@@ -1,13 +1,9 @@
 {
-  "tools": [
-    {
-      "name": "bridge-cli",
-      "command": "/Users/michaelshingara/Documents/remix-mac-local-ai-gateway-for-iphone/.venv/bin/bridge-cli",
-      "args": ["$1"],
-      "env": {
-        "LM_BRIDGE_HOST": "192.168.1.125",
-        "LM_BRIDGE_PORT": "9090"
-      }
+  "language_models": {
+    "llama.cpp": {
+      "api_url": "http://127.0.0.1:8081",
+      "context_window": 2048,
+      "auto_discover": true
     }
-  ]
+  }
 }

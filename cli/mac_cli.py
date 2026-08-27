@@ -180,7 +180,7 @@ async def cmd_chat_async(args: argparse.Namespace, config: Dict[str, Any]) -> in
                     system=executor.system_prompt(),
                     stream=True,
                 ):
-                    collected.write(token)
+                    sys.stdout.write(token)
                     sys.stdout.flush()
                     collected += token
                 calls = parse_tool_calls(collected)

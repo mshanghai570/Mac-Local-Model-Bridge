@@ -1,8 +1,10 @@
 # ⚡ Local AI Gateway for iPhone & Apple Silicon Mac
 
-Lightweight, high-performance on-device AI Gateway bridging **iPhone, Safari, Claude Desktop, and LAN clients** to locally hosted LLMs running with Metal GPU acceleration on Apple Silicon Mac (M1–M4).
+Lightweight local AI gateway bridging **iPhone, Safari, Claude Desktop, Zed, and LAN clients** to models hosted on a Mac.
 
-**The Mac is the inference host. The iPhone is the client. Zero cloud dependencies, zero data leakage, zero subscription fees.**
+**The Mac is the inference host and the iPhone is the paired controller/client.** The project retains its Ollama integration and legacy phone-hosted fallback, while the supported Intel-Mac path uses a CPU-first, loopback-only llama.cpp runtime with Mac-managed GGUF storage.
+
+> New or Intel-Mac deployments should begin with the [Intel Mac GGUF Bridge guide](docs/INTEL_MAC_BRIDGE.md). It covers secure pairing, resumable iPhone-to-Mac transfers, model verification, runtime management, CLI use, and Zed configuration.
 
 ---
 

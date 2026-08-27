@@ -303,6 +303,18 @@ def cmd_config() -> int:
     return 0
  
  
+def cmd_pair() -> int:
+    """Generate a short-lived pairing code for a nearby iPhone."""
+    from .auth import device_manager
+    code = device_manager.generate_pairing_code()
+    print("Mac Local Model Bridge pairing")
+    print(f"  Code: {code}")
+    print("  Expires: 5 minutes")
+    print(f"  iPhone endpoint: {config.lan_url}")
+    print("  Enter the code in Connection → Secure Model Bridge Pairing.")
+    return 0
+
+
 def cmd_stats() -> int:
     """Show gateway statistics and health."""
     console = _get_console()
@@ -432,7 +444,7 @@ def show_help() -> None:
 def cli_entry():
     parser = argparse.ArgumentParser(
         prog="local-ai-gateway",
-        description="Local AI Gateway - On-device inference bridge for Apple Silicon, iPhone, and Claude Desktop."
+        description="Local AI Gateway - Mac-hosted local inference bridge for iPhone, Zed, and LAN clients."
     )
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
@@ -451,6 +463,9 @@ def cli_entry():
 
     # models command
     subparsers.add_parser("models", help="List available models with capabilities")
+
+    # pairing command
+    subparsers.add_parser("pair", help="Generate a short-lived iPhone pairing code")
 
     # config command
     subparsers.add_parser("config", help="Show gateway configuration")
@@ -485,6 +500,9 @@ def cli_entry():
 
     elif args.command == "models":
         sys.exit(cmd_models())
+
+    elif args.command == "pair":
+        sys.exit(cmd_pair())
 
     elif args.command == "config":
         sys.exit(cmd_config())

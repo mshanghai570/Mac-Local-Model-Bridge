@@ -175,8 +175,10 @@ class GatewayConfig:
         if not (1 <= self.port <= 65535):
             raise ConfigurationError(f"Invalid GATEWAY_PORT: {self.port}. Port must be between 1 and 65535.")
 
-        if self.provider not in ("ollama", "mlx", "mock"):
-            raise ConfigurationError(f"Unsupported MODEL_PROVIDER: '{self.provider}'. Choose 'ollama', 'mlx', or 'mock'.")
+        if self.provider not in ("ollama", "llama_cpp", "llama.cpp", "mlx", "mock"):
+            raise ConfigurationError(
+                f"Unsupported MODEL_PROVIDER: '{self.provider}'. Choose 'ollama' or 'llama_cpp'."
+            )
 
         if not self.ollama_url.startswith(("http://", "https://")):
             raise ConfigurationError(f"Invalid OLLAMA_URL: '{self.ollama_url}'. Must begin with http:// or https://.")

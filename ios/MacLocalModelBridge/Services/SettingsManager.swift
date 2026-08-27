@@ -10,6 +10,7 @@ public class SettingsManager: ObservableObject {
     public static let shared = SettingsManager()
 
     private let defaults = UserDefaults.standard
+    private let keychainAccount = "paired-bridge-token"
 
     @Published public var host: String {
         didSet { defaults.set(host, forKey: "bridge_host") }
@@ -23,8 +24,17 @@ public class SettingsManager: ObservableObject {
         didSet { defaults.set(serverPort, forKey: "phone_server_port") }
     }
 
+    /// Either an existing gateway key or a paired-device token. It is held in the Keychain,
+    /// never persisted in UserDefaults. A one-time migration removes earlier plaintext values.
     @Published public var apiKey: String {
-        didSet { defaults.set(apiKey, forKey: "bridge_api_key") }
+        didSet {
+            if apiKey.isEmpty {
+                KeychainSecretStore.delete(account: keychainAccount)
+            } else {
+                KeychainSecretStore.write(apiKey, account: keychainAccount)
+            }
+            defaults.removeObject(forKey: "bridge_api_key")
+        }
     }
 
     @Published public var defaultModel: String {
@@ -43,6 +53,11 @@ public class SettingsManager: ObservableObject {
         didSet { defaults.set(autoDiscover, forKey: "bridge_auto_discover") }
     }
 
+    /// Retains the legacy phone-hosted engine as an intentional fallback, not the default path.
+    @Published public var enableDirectInference: Bool {
+        didSet { defaults.set(enableDirectInference, forKey: "enable_direct_inference") }
+    }
+
     public var baseUrlString: String {
         var trimmedHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "http://", with: "")
@@ -55,14 +70,12 @@ public class SettingsManager: ObservableObject {
         trimmedHost = trimmedHost.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !trimmedHost.isEmpty else { return "" }
-
         let hostOnly: String
         if let separatorIndex = trimmedHost.firstIndex(of: ":") {
             hostOnly = String(trimmedHost[..<separatorIndex])
         } else {
             hostOnly = trimmedHost
         }
-
         guard !hostOnly.isEmpty else { return "" }
         return "http://\(hostOnly):\(port)"
     }
@@ -76,12 +89,22 @@ public class SettingsManager: ObservableObject {
         self.host = defaults.string(forKey: "bridge_host") ?? ""
         let savedPort = defaults.integer(forKey: "bridge_port")
         self.port = savedPort > 0 ? savedPort : 8080
-        self.apiKey = defaults.string(forKey: "bridge_api_key") ?? ""
-        self.defaultModel = defaults.string(forKey: "bridge_default_model") ?? "llama3.2:3b"
+
+        let legacyApiKey = defaults.string(forKey: "bridge_api_key") ?? ""
+        self.apiKey = KeychainSecretStore.read(account: keychainAccount) ?? legacyApiKey
+        if !legacyApiKey.isEmpty {
+            if KeychainSecretStore.read(account: keychainAccount) == nil {
+                KeychainSecretStore.write(legacyApiKey, account: keychainAccount)
+            }
+            defaults.removeObject(forKey: "bridge_api_key")
+        }
+
+        self.defaultModel = defaults.string(forKey: "bridge_default_model") ?? ""
         let savedTemp = defaults.double(forKey: "bridge_temperature")
         self.temperature = savedTemp > 0 ? savedTemp : 0.7
-        self.systemPrompt = defaults.string(forKey: "bridge_system_prompt") ?? "You are an ultra-fast local assistant on MacBook M-series."
+        self.systemPrompt = defaults.string(forKey: "bridge_system_prompt") ?? "You are a private local assistant running on an Intel Mac."
         self.autoDiscover = defaults.object(forKey: "bridge_auto_discover") == nil ? true : defaults.bool(forKey: "bridge_auto_discover")
+        self.enableDirectInference = defaults.bool(forKey: "enable_direct_inference")
         let savedServerPort = defaults.integer(forKey: "phone_server_port")
         self.serverPort = savedServerPort > 0 ? savedServerPort : 9090
     }
