@@ -229,7 +229,7 @@ public class BridgeClient: ObservableObject {
                         let jsonString = String(trimmed.dropFirst(6))
 
                         if jsonString == "[DONE]" {
-                            continuation.yield(ChatStreamChunk(content: nil, toolCalls: nil, done: true))
+                            continuation.yield(ChatStreamChunk(content: nil, toolCalls: nil, done: true, requestId: requestId))
                             break
                         }
 
