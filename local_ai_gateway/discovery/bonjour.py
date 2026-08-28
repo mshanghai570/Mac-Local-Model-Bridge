@@ -19,10 +19,10 @@ except ImportError:
 class BonjourAdvertiser:
     """
     Advertises Local AI Gateway on the local network via Apple Bonjour.
-    Primary type is `_local-ai-bridge._tcp` (15-byte, RFC 6763 compliant); the
-    legacy `_local-ai-gateway._tcp` alias is also attempted but non-fatal on failure.
+    Uses `_local-ai-bridge._tcp`, whose service-type label is within the
+    15-byte DNS-SD limit enforced by Apple Bonjour and zeroconf.
     """
-    SERVICE_TYPES = ["_local-ai-bridge._tcp", "_local-ai-gateway._tcp"]
+    SERVICE_TYPES = ["_local-ai-bridge._tcp"]
 
     def __init__(self, port: int, service_name: str = "Local AI Gateway", properties: Optional[dict] = None):
         self.port = port

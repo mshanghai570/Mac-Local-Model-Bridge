@@ -6,6 +6,7 @@ model upload or process-control authority to any local network peer.
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, Callable, Dict, Optional
 
@@ -32,6 +33,7 @@ except ImportError:  # pragma: no cover - FastAPI is a runtime dependency
 
 
 MAX_UPLOAD_CHUNK_BYTES = int(os.getenv("MAX_UPLOAD_CHUNK_BYTES", str(8 * 1024 * 1024)))
+logger = logging.getLogger("local_ai_gateway.bridge_transfers")
 
 
 def _http_error(error: Exception) -> HTTPException:
@@ -134,12 +136,20 @@ def create_bridge_models_router(
     async def begin_transfer(payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
         require_paired_device(request)
         try:
-            return store.begin_upload(
+            result = store.begin_upload(
                 filename=str(payload.get("filename") or ""),
                 size_bytes=payload.get("size_bytes"),
                 sha256=str(payload.get("sha256") or ""),
             )
+            transfer = result.get("transfer") or {}
+            logger.info(
+                "Transfer begin status=%s id=%s file=%s received=%s size=%s",
+                result.get("status"), transfer.get("id", "-"),
+                payload.get("filename"), transfer.get("bytes_received", 0), payload.get("size_bytes"),
+            )
+            return result
         except Exception as exc:
+            logger.warning("Transfer begin rejected file=%s error=%s", payload.get("filename"), exc)
             raise _http_error(exc)
 
     @router.get("/transfers/{transfer_id}")
@@ -167,18 +177,28 @@ def create_bridge_models_router(
         if len(body) > MAX_UPLOAD_CHUNK_BYTES:
             raise HTTPException(status_code=413, detail=f"Upload chunks are limited to {MAX_UPLOAD_CHUNK_BYTES} bytes.")
         try:
-            return store.append_chunk(transfer_id, _parse_offset(request), body)
+            result = store.append_chunk(transfer_id, _parse_offset(request), body)
+            logger.info(
+                "Transfer chunk id=%s received=%s size=%s",
+                transfer_id, result.get("bytes_received"), result.get("size_bytes"),
+            )
+            return result
         except HTTPException:
             raise
         except Exception as exc:
+            logger.warning("Transfer chunk rejected id=%s error=%s", transfer_id, exc)
             raise _http_error(exc)
 
     @router.post("/transfers/{transfer_id}/complete")
     async def complete_transfer(transfer_id: str, request: Request) -> Dict[str, Any]:
         require_paired_device(request)
         try:
-            return {"model": store.complete_upload(transfer_id)}
+            logger.info("Transfer verification started id=%s", transfer_id)
+            model = store.complete_upload(transfer_id)
+            logger.info("Transfer verification completed id=%s file=%s", transfer_id, model.get("filename"))
+            return {"model": model}
         except Exception as exc:
+            logger.warning("Transfer verification failed id=%s error=%s", transfer_id, exc)
             raise _http_error(exc)
 
     @router.post("/transfers/{transfer_id}/cancel")

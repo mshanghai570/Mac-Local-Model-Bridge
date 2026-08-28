@@ -32,6 +32,7 @@ public struct ModelsListView: View {
     @State private var transferringModelName: String? = nil
     @State private var activeTransferID: String? = nil
     @State private var transferProgress: Double = 0
+    @State private var transferStage: String = ""
 
     public var body: some View {
         NavigationStack {
@@ -283,6 +284,7 @@ public struct ModelsListView: View {
                         isLoaded: loadedModelName == model.name,
                         isTransferring: transferringModelName == model.name,
                         transferProgress: transferProgress,
+                        transferStage: transferStage,
                         onLoaded: { loadedModelName = $0 },
                         onLoadingStart: { loadingModelName = $0 },
                         onLoadingEnd: { _ in loadingModelName = nil },
@@ -328,6 +330,7 @@ public struct ModelsListView: View {
     private func transferDeviceModel(_ model: DeviceModel) {
         transferringModelName = model.name
         transferProgress = 0
+        transferStage = "Preparing local GGUF…"
         importError = nil
         Task {
             do {
@@ -338,12 +341,16 @@ public struct ModelsListView: View {
                     },
                     transferStarted: { transferID in
                         await MainActor.run { activeTransferID = transferID }
+                    },
+                    stage: { currentStage in
+                        await MainActor.run { transferStage = currentStage }
                     }
                 )
                 await MainActor.run {
                     transferringModelName = nil
                     activeTransferID = nil
                     transferProgress = 1
+                    transferStage = ""
                     section = .mac
                     macModels = (macModels.filter { $0.sha256 != sent.sha256 } + [sent])
                         .sorted { $0.filename.localizedCaseInsensitiveCompare($1.filename) == .orderedAscending }
@@ -354,6 +361,7 @@ public struct ModelsListView: View {
                     importError = "Mac transfer failed: \(error.localizedDescription)"
                     transferringModelName = nil
                     activeTransferID = nil
+                    transferStage = ""
                 }
             }
         }
@@ -368,6 +376,7 @@ public struct ModelsListView: View {
                     importError = "Mac transfer cancelled. Use SEND TO MAC again to resume from the saved offset."
                     transferringModelName = nil
                     activeTransferID = nil
+                    transferStage = ""
                 }
             } catch {
                 await MainActor.run { importError = "Could not cancel Mac transfer: \(error.localizedDescription)" }
@@ -554,6 +563,7 @@ struct DeviceModelRowView: View {
     let isLoaded: Bool
     let isTransferring: Bool
     let transferProgress: Double
+    let transferStage: String
     let onLoaded: (String) -> Void
     let onLoadingStart: (String) -> Void
     let onLoadingEnd: (String) -> Void
@@ -582,7 +592,9 @@ struct DeviceModelRowView: View {
                 HStack(spacing: AppTheme.Spacing.xs) {
                     ProgressView()
                         .controlSize(.small)
-                    Text(isTransferring ? "SENDING TO MAC \(Int(transferProgress * 100))%…" : "LOADING INTO MEMORY…")
+                    Text(isTransferring
+                         ? "\(transferStage.isEmpty ? "SENDING TO MAC" : transferStage)\(transferStage == "Uploading to Mac…" ? " \(Int(transferProgress * 100))%" : "")"
+                         : "LOADING INTO MEMORY…")
                         .font(AppTheme.Font.caption2(.bold))
                         .foregroundColor(Color.textSecondary)
                     if isTransferring {

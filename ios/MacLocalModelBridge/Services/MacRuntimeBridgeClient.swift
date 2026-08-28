@@ -121,6 +121,9 @@ public final class MacRuntimeBridgeClient {
     private let settings: SettingsManager
     private let chunkBytes = 4 * 1024 * 1024
     private let maxChunkAttempts = 3
+    /// GGUF hashing and final integrity verification can legitimately exceed the
+    /// generic API timeout on an older iPhone, slow Wi-Fi, or large model.
+    private let transferRequestTimeout: TimeInterval = 10 * 60
 
     public init(session: URLSession = .shared, settings: SettingsManager = .shared) {
         self.session = session
@@ -178,13 +181,22 @@ public final class MacRuntimeBridgeClient {
     public func upload(
         model: DeviceModel,
         progress: @escaping @Sendable (Double) async -> Void,
-        transferStarted: @escaping @Sendable (String) async -> Void = { _ in }
+        transferStarted: @escaping @Sendable (String) async -> Void = { _ in },
+        stage: @escaping @Sendable (String) async -> Void = { _ in }
     ) async throws -> MacStoredModel {
         let sourceURL = model.fileURL
         let attributes = try FileManager.default.attributesOfItem(atPath: sourceURL.path)
         let size = (attributes[.size] as? NSNumber)?.int64Value ?? 0
         guard size > 0 else { throw MacRuntimeBridgeError.invalidModelFile }
-        let digest = try sha256(of: sourceURL)
+        await stage("Preparing local GGUF…")
+        // The original path performed a full multi-gigabyte SHA-256 scan before
+        // the first network request while the row displayed only 0%. Keep that
+        // work off the UI actor and expose it as a distinct transfer phase.
+        await stage("Hashing local GGUF…")
+        let digest = try await Task.detached(priority: .utility) {
+            try MacRuntimeBridgeClient.sha256(of: sourceURL)
+        }.value
+        await stage("Starting resumable Mac transfer…")
 
         struct StartRequest: Encodable { let filename: String; let size_bytes: Int64; let sha256: String }
         struct StartResponse: Decodable { let status: String; let model: MacStoredModel?; let transfer: MacTransfer? }
@@ -200,6 +212,7 @@ public final class MacRuntimeBridgeClient {
         }
         guard var transfer = started.transfer else { throw MacRuntimeBridgeError.malformedResponse }
         await transferStarted(transfer.id)
+        await stage("Uploading to Mac…")
         var offset = transfer.bytesReceived
         await progress(Double(offset) / Double(size))
 
@@ -226,11 +239,13 @@ public final class MacRuntimeBridgeClient {
             throw error
         }
 
+        await stage("Verifying GGUF on Mac…")
         struct CompleteResponse: Decodable { let model: MacStoredModel }
         let completed: CompleteResponse = try await request(
             path: "/bridge/v1/transfers/\(transfer.id)/complete",
             method: "POST",
-            response: CompleteResponse.self
+            response: CompleteResponse.self,
+            timeout: transferRequestTimeout
         )
         await progress(1.0)
         return completed.model
@@ -246,6 +261,7 @@ public final class MacRuntimeBridgeClient {
             do {
                 let request = try makeRequest(path: "/bridge/v1/transfers/\(transferID)/chunk", method: "PUT", requiresPairing: true)
                 var mutable = request
+                mutable.timeoutInterval = transferRequestTimeout
                 mutable.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
                 mutable.setValue(String(offset), forHTTPHeaderField: "X-Upload-Offset")
                 let (responseData, response) = try await session.upload(for: mutable, from: data)
@@ -261,7 +277,7 @@ public final class MacRuntimeBridgeClient {
         throw lastError
     }
 
-    private func sha256(of fileURL: URL) throws -> String {
+    private static func sha256(of fileURL: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: fileURL)
         defer { try? handle.close() }
         var hasher = SHA256()
@@ -272,26 +288,29 @@ public final class MacRuntimeBridgeClient {
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
-    private func request<Response: Decodable>(path: String, method: String = "GET", response: Response.Type) async throws -> Response {
-        try await request(path: path, method: method, payload: Optional<String>.none, response: response)
+    private func request<Response: Decodable>(path: String, method: String = "GET", response: Response.Type, timeout: TimeInterval = 60) async throws -> Response {
+        try await request(path: path, method: method, payload: Optional<String>.none, response: response, timeout: timeout)
     }
 
     private func request<Payload: Encodable, Response: Decodable>(
         path: String,
         method: String,
         payload: Payload,
-        response: Response.Type
+        response: Response.Type,
+        timeout: TimeInterval = 60
     ) async throws -> Response {
-        try await request(path: path, method: method, payload: payload, requiresPairing: true)
+        try await request(path: path, method: method, payload: payload, requiresPairing: true, timeout: timeout)
     }
 
     private func request<Payload: Encodable, Response: Decodable>(
         path: String,
         method: String,
         payload: Payload,
-        requiresPairing: Bool = true
+        requiresPairing: Bool = true,
+        timeout: TimeInterval = 60
     ) async throws -> Response {
         var request = try makeRequest(path: path, method: method, requiresPairing: requiresPairing)
+        request.timeoutInterval = timeout
         request.httpBody = try JSONEncoder().encode(payload)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let (data, response) = try await session.data(for: request)
