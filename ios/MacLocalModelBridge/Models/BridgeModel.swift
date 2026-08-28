@@ -278,14 +278,21 @@ public struct ChatRequestPayload: Codable {
     public let temperature: Double?
     public let system: String?
     public let tools: [OpenAIToolDefinition]?
+    public let requestId: String?
 
-    public init(model: String, messages: [ChatMessagePayload], stream: Bool = false, temperature: Double? = nil, system: String? = nil, tools: [OpenAIToolDefinition]? = nil) {
+    enum CodingKeys: String, CodingKey {
+        case model, messages, stream, temperature, system, tools
+        case requestId = "request_id"
+    }
+
+    public init(model: String, messages: [ChatMessagePayload], stream: Bool = false, temperature: Double? = nil, system: String? = nil, tools: [OpenAIToolDefinition]? = nil, requestId: String? = nil) {
         self.model = model
         self.messages = messages
         self.stream = stream
         self.temperature = temperature
         self.system = system
         self.tools = tools
+        self.requestId = requestId
     }
 }
 
@@ -321,11 +328,13 @@ public struct StreamChunkPayload: Codable {
     public let done: Bool?
     public let model: String?
     public let toolCalls: [OpenAIToolCall]?
+    public let requestId: String?
 
     enum CodingKeys: String, CodingKey {
         case content
         case done
         case model
         case toolCalls = "tool_calls"
+        case requestId = "request_id"
     }
 }

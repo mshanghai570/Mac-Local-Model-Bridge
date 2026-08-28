@@ -13,6 +13,7 @@ from .ollama import format_size, infer_capabilities
 from ..config import config
 from ..errors import ModelNotFoundError, ProviderError, ProviderTimeoutError, ProviderUnavailableError
 from ..metrics import metrics_collector
+from ..inference_trace import control_token_flags, emit as emit_inference_trace, fingerprint, message_manifest
 from ..model_store import model_store
 from ..models import ChatMessage, ChatRequest, GenerateRequest, HealthResponse, ModelInfo
 from ..runtime import llama_cpp_runtime
@@ -190,11 +191,25 @@ class LlamaCppProvider(BaseModelProvider):
         }
 
     async def chat_stream(self, request: ChatRequest) -> AsyncIterator[Dict[str, Any]]:
-        self._require_running()
+        runtime_status = self._require_running()
         req_id = request.request_id or f"llamacpp-{int(time.time() * 1000)}"
+        upstream_payload = self._chat_payload(request, stream=True)
+        running_model = runtime_status.get("model") or {}
+        emit_inference_trace(
+            config.inference_trace,
+            req_id,
+            "llama_cpp_request",
+            endpoint=f"{self.base_url}/v1/chat/completions",
+            runtime_pid=runtime_status.get("pid"),
+            runtime_model=running_model.get("filename"),
+            runtime_model_sha256_16=str(runtime_status.get("model_sha256") or "")[:16],
+            message_manifest=message_manifest(upstream_payload.get("messages") or []),
+        )
+        response_text = ""
+        chunk_count = 0
         try:
             async with self._get_client().stream(
-                "POST", f"{self.base_url}/v1/chat/completions", json=self._chat_payload(request, stream=True)
+                "POST", f"{self.base_url}/v1/chat/completions", json=upstream_payload
             ) as response:
                 if response.status_code == 404:
                     raise ModelNotFoundError(request.model)
@@ -214,6 +229,9 @@ class LlamaCppProvider(BaseModelProvider):
                     choice = (chunk.get("choices") or [{}])[0]
                     delta = choice.get("delta") or {}
                     content = delta.get("content") or ""
+                    response_text += content
+                    if content:
+                        chunk_count += 1
                     if content and first:
                         metrics_collector.record_first_token(req_id)
                         first = False
@@ -228,6 +246,16 @@ class LlamaCppProvider(BaseModelProvider):
             raise ProviderUnavailableError(f"Lost connection to llama.cpp at {self.base_url}: {exc}") from exc
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError("llama.cpp streaming request timed out.") from exc
+        finally:
+            emit_inference_trace(
+                config.inference_trace,
+                req_id,
+                "llama_cpp_response",
+                chunks=chunk_count,
+                response_characters=len(response_text),
+                response_sha256_16=fingerprint(response_text),
+                surfaced_control_tokens=control_token_flags(response_text),
+            )
 
     async def generate(self, request: GenerateRequest) -> Dict[str, Any]:
         # The chat-completions endpoint is used deliberately because it is the stable shared surface

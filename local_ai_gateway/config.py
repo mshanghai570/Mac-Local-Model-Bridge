@@ -61,6 +61,8 @@ class GatewayConfig:
         self.enable_sessions: bool = self._parse_bool_env("ENABLE_SESSIONS", default=True)
         self.enable_auto_routing: bool = self._parse_bool_env("ENABLE_AUTO_ROUTING", default=True)
         self.verbose_logging: bool = self._parse_bool_env("VERBOSE_LOGGING", default=False)
+        # Emits request-boundary fingerprints only; never logs prompt or output text.
+        self.inference_trace: bool = self._parse_bool_env("GATEWAY_INFERENCE_TRACE", default=False)
 
         # CORS
         self.allowed_origins: List[str] = self._parse_cors_origins()

@@ -14,6 +14,12 @@ from ..providers import get_provider
 from ..sessions import session_manager, estimate_tokens
 from ..router import model_router
 from ..metrics import metrics_collector
+from ..inference_trace import (
+    control_token_flags,
+    emit as emit_inference_trace,
+    fingerprint,
+    message_manifest,
+)
 from ..errors import (
     GatewayError,
     AuthenticationError,
@@ -178,6 +184,20 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request):
             for m in raw_msgs
         ]
 
+    # The trace captures identity and ordering without logging prompts, API keys,
+    # or model output. It is disabled unless GATEWAY_INFERENCE_TRACE=1.
+    emit_inference_trace(
+        config.inference_trace,
+        req_id,
+        "gateway_received",
+        endpoint="/chat",
+        requested_model=raw_model,
+        message_manifest=message_manifest(messages),
+        system_characters=len(str(payload.get("system") or "")),
+        system_sha256_16=fingerprint(payload.get("system") or ""),
+        tool_count=len(payload.get("tools") or []),
+    )
+
     # Model resolution with task & alias awareness
     resolved_model = model_router.resolve_model(
         requested_model=raw_model,
@@ -207,6 +227,15 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request):
         response_format=payload.get("response_format"),
         options=payload.get("options", {}),
         request_id=req_id
+    )
+    emit_inference_trace(
+        config.inference_trace,
+        req_id,
+        "gateway_dispatch",
+        provider=getattr(provider, "provider_name", type(provider).__name__),
+        resolved_model=resolved_model,
+        stream=stream_requested,
+        message_manifest=message_manifest(chat_req.messages),
     )
 
     if stream_requested:
@@ -244,6 +273,18 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request):
                     if messages and messages[-1].role == "user":
                         session_manager.add_message(session_id, messages[-1])
                     session_manager.add_message(session_id, ChatMessage(role="assistant", content=full_response_text))
+
+                emit_inference_trace(
+                    config.inference_trace,
+                    req_id,
+                    "gateway_stream_complete",
+                    provider=getattr(provider, "provider_name", type(provider).__name__),
+                    resolved_model=resolved_model,
+                    chunks=token_count,
+                    response_characters=len(full_response_text),
+                    response_sha256_16=fingerprint(full_response_text),
+                    surfaced_control_tokens=control_token_flags(full_response_text),
+                )
 
                 # Final metrics event
                 yield format_sse_event({
@@ -283,6 +324,16 @@ async def chat_endpoint(payload: Dict[str, Any], request: Request):
                 session_manager.add_message(session_id, messages[-1])
             session_manager.add_message(session_id, ChatMessage(role="assistant", content=content))
 
+        emit_inference_trace(
+            config.inference_trace,
+            req_id,
+            "gateway_response_complete",
+            provider=getattr(provider, "provider_name", type(provider).__name__),
+            resolved_model=resolved_model,
+            response_characters=len(content),
+            response_sha256_16=fingerprint(content),
+            surfaced_control_tokens=control_token_flags(content),
+        )
         return {
             "request_id": req_id,
             "model": resolved_model,

@@ -20,6 +20,7 @@ from .base import BaseModelProvider
 from ..models import ChatRequest, GenerateRequest, ModelInfo, HealthResponse, ModelCapabilities
 from ..config import config
 from ..metrics import metrics_collector
+from ..inference_trace import control_token_flags, emit as emit_inference_trace, fingerprint, message_manifest
 from ..sessions import session_manager
 from ..errors import (
     ProviderUnavailableError,
@@ -293,9 +294,10 @@ class OllamaProvider(BaseModelProvider):
 
     async def chat_stream(self, request: ChatRequest) -> AsyncIterator[Dict[str, Any]]:
         url = f"{self.base_url}/api/chat"
+        upstream_messages = self._build_ollama_messages(request)
         payload: Dict[str, Any] = {
             "model": request.model,
-            "messages": self._build_ollama_messages(request),
+            "messages": upstream_messages,
             "stream": True
         }
         options = dict(request.options or {})
@@ -314,6 +316,16 @@ class OllamaProvider(BaseModelProvider):
 
         req_id = request.request_id or f"req-{int(time.time()*1000)}"
         client = self._get_client()
+        emit_inference_trace(
+            config.inference_trace,
+            req_id,
+            "ollama_request",
+            endpoint=url,
+            runtime_model=request.model,
+            message_manifest=message_manifest(upstream_messages),
+        )
+        response_text = ""
+        token_count = 0
 
         try:
             async with client.stream("POST", url, json=payload) as response:
@@ -323,7 +335,6 @@ class OllamaProvider(BaseModelProvider):
                     err_body = await response.aread()
                     raise ProviderError(f"Ollama stream HTTP {response.status_code}: {err_body.decode('utf-8')}")
 
-                token_count = 0
                 async for line in response.aiter_lines():
                     if not line or not line.strip():
                         continue
@@ -331,6 +342,7 @@ class OllamaProvider(BaseModelProvider):
                         chunk = json.loads(line)
                         msg = chunk.get("message", {})
                         content_piece = msg.get("content", "")
+                        response_text += content_piece
                         tool_calls = msg.get("tool_calls")
                         
                         if content_piece or tool_calls:
@@ -356,6 +368,16 @@ class OllamaProvider(BaseModelProvider):
             raise ProviderUnavailableError(f"Lost connection to Ollama at {self.base_url}: {e}")
         except httpx.TimeoutException:
             raise ProviderTimeoutError(f"Streaming request to Ollama timed out after {config.generation_timeout}s.")
+        finally:
+            emit_inference_trace(
+                config.inference_trace,
+                req_id,
+                "ollama_response",
+                chunks=token_count,
+                response_characters=len(response_text),
+                response_sha256_16=fingerprint(response_text),
+                surfaced_control_tokens=control_token_flags(response_text),
+            )
 
     async def generate(self, request: GenerateRequest) -> Dict[str, Any]:
         payload: Dict[str, Any] = {

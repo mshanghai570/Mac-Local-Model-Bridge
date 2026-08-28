@@ -22,6 +22,9 @@ public struct ChatMessage: Identifiable, Equatable {
     public var timeToFirstTokenMs: Double?
     public var totalTokens: Int?
     public var toolCalls: [OpenAIToolCall]?
+    /// UI-only notices such as onboarding and local status must never become
+    /// prior assistant turns in an inference request.
+    public let includeInInferenceContext: Bool
 
     public init(
         id: UUID = UUID(),
@@ -33,7 +36,8 @@ public struct ChatMessage: Identifiable, Equatable {
         tokensPerSecond: Double? = nil,
         timeToFirstTokenMs: Double? = nil,
         totalTokens: Int? = nil,
-        toolCalls: [OpenAIToolCall]? = nil
+        toolCalls: [OpenAIToolCall]? = nil,
+        includeInInferenceContext: Bool = true
     ) {
         self.id = id
         self.role = role
@@ -45,5 +49,6 @@ public struct ChatMessage: Identifiable, Equatable {
         self.timeToFirstTokenMs = timeToFirstTokenMs
         self.totalTokens = totalTokens
         self.toolCalls = toolCalls
+        self.includeInInferenceContext = includeInInferenceContext
     }
 }

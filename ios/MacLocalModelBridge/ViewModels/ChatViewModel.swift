@@ -6,6 +6,8 @@
 import Foundation
 import SwiftUI
 import Combine
+import CryptoKit
+import OSLog
 
 public enum ChatSource: String, CaseIterable, Identifiable {
     case mac = "MAC"
@@ -36,6 +38,10 @@ public class ChatViewModel: ObservableObject {
 
     private let client: BridgeClient
     private var streamTask: Task<Void, Never>?
+    private static let inferenceTraceLogger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.localai.MacLocalModelBridge",
+        category: "inference-trace"
+    )
 
     /// Splits on-device generation output into answer vs. <think> channels.
     /// Nil for MAC-source requests (server output has no local think tags).
@@ -63,7 +69,8 @@ public class ChatViewModel: ObservableObject {
         self.messages.append(
             ChatMessage(
                 role: .assistant,
-                content: "🍏 **Mac Local Model Bridge ready.** Open **Settings** and enter your Mac's LAN IP address, or wait for Bonjour auto-discovery. Tap **PING BUS** to verify the connection, then send a prompt to stream tokens over LAN.\n\nYou can also run models **fully on-device**: import a `.gguf` file in the **Models** tab, then switch the source to **ON-DEVICE**."
+                content: "🍏 **Mac Local Model Bridge ready.** Open **Settings** and enter your Mac's LAN IP address, or wait for Bonjour auto-discovery. Tap **PING BUS** to verify the connection, then send a prompt to stream tokens over LAN.\n\nYou can also run models **fully on-device**: import a `.gguf` file in the **Models** tab, then switch the source to **ON-DEVICE**.",
+                includeInInferenceContext: false
             )
         )
     }
@@ -99,6 +106,42 @@ public class ChatViewModel: ObservableObject {
         }
     }
 
+    /// Returns only user-authored or model-generated conversation turns. UI
+    /// notices (onboarding, clear-chat status, and local errors) remain visible
+    /// but must never condition the next model response.
+    private func outboundMessages(excluding assistantId: UUID) -> [ChatMessage] {
+        messages.filter { $0.id != assistantId && $0.includeInInferenceContext }
+    }
+
+    private func traceFingerprint(_ value: String) -> String {
+        let digest = SHA256.hash(data: Data(value.utf8))
+        return digest.prefix(8).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func traceOutbound(
+        requestId: String,
+        messages: [ChatMessage],
+        system: String
+    ) {
+        #if DEBUG
+        let manifest = messages.enumerated().map { index, message in
+            "\\(index):\\(message.role.rawValue):\\(message.content.count):\\(traceFingerprint(message.content))"
+        }.joined(separator: ",")
+        Self.inferenceTraceLogger.notice(
+            "INFERENCE_TRACE request_id=\\(requestId, privacy: .public) boundary=ios_request messages=\\(manifest, privacy: .public) system_chars=\\(system.count, privacy: .public) system_sha256_8=\\(traceFingerprint(system), privacy: .public)"
+        )
+        #endif
+    }
+
+    private func traceDisplayed(requestId: String, content: String, gatewayRequestId: String?) {
+        #if DEBUG
+        let receivedId = gatewayRequestId ?? "none"
+        Self.inferenceTraceLogger.notice(
+            "INFERENCE_TRACE request_id=\\(requestId, privacy: .public) boundary=ios_displayed_response gateway_request_id=\\(receivedId, privacy: .public) characters=\\(content.count, privacy: .public) sha256_8=\\(traceFingerprint(content), privacy: .public)"
+        )
+        #endif
+    }
+
     private func sendMacMessage(assistantId: UUID) {
         let settings = SettingsManager.shared
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -106,20 +149,28 @@ public class ChatViewModel: ObservableObject {
         var tokenCount = 0
 
         let tools = Self.defaultTools()
+        let requestId = "ios-\\(UUID().uuidString.lowercased())"
+        let outbound = self.outboundMessages(excluding: assistantId)
+        traceOutbound(requestId: requestId, messages: outbound, system: settings.systemPrompt)
 
         streamTask = Task {
             do {
                 let stream = client.streamChat(
-                    messages: messages.filter { $0.id != assistantId },
+                    messages: outbound,
                     model: activeModel,
                     temperature: settings.temperature,
                     system: settings.systemPrompt,
-                    tools: tools
+                    tools: tools,
+                    requestId: requestId
                 )
 
                 var accumulatedToolCalls: [OpenAIToolCall] = []
+                var gatewayRequestId: String? = nil
 
                 for try await chunk in stream {
+                    if let chunkRequestId = chunk.requestId, !chunkRequestId.isEmpty {
+                        gatewayRequestId = chunkRequestId
+                    }
                     if let content = chunk.content, !content.isEmpty {
                         self.accumulateToken(
                             content,
@@ -146,6 +197,11 @@ public class ChatViewModel: ObservableObject {
 
                 if let idx = self.messages.firstIndex(where: { $0.id == assistantId }) {
                     self.messages[idx].isStreaming = false
+                    self.traceDisplayed(
+                        requestId: requestId,
+                        content: self.messages[idx].content,
+                        gatewayRequestId: gatewayRequestId
+                    )
                 }
             } catch {
                 self.handleGenerationError(error, assistantId: assistantId)
@@ -224,7 +280,7 @@ public class ChatViewModel: ObservableObject {
                 )
 
                 let stream = LocalInferenceEngine.shared.generate(
-                    messages: self.messages.filter { $0.id != assistantId },
+                    messages: self.outboundMessages(excluding: assistantId),
                     system: settings.systemPrompt,
                     temperature: settings.temperature,
                     maxTokens: self.deviceMaxTokens
@@ -374,7 +430,8 @@ public class ChatViewModel: ObservableObject {
         messages.append(
             ChatMessage(
                 role: .assistant,
-                content: "Chat cleared. Using **\(subject)**."
+                content: "Chat cleared. Using **\(subject)**.",
+                includeInInferenceContext: false
             )
         )
     }

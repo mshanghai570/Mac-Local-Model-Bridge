@@ -167,6 +167,7 @@ public class BridgeClient: ObservableObject {
         public let content: String?
         public let toolCalls: [OpenAIToolCall]?
         public let done: Bool?
+        public let requestId: String?
     }
 
     public func streamChat(
@@ -174,7 +175,8 @@ public class BridgeClient: ObservableObject {
         model: String,
         temperature: Double = 0.7,
         system: String? = nil,
-        tools: [OpenAIToolDefinition]? = nil
+        tools: [OpenAIToolDefinition]? = nil,
+        requestId: String? = nil
     ) -> AsyncThrowingStream<ChatStreamChunk, Error> {
         return AsyncThrowingStream { continuation in
             let task = Task.detached {
@@ -188,11 +190,15 @@ public class BridgeClient: ObservableObject {
                         stream: true,
                         temperature: temperature,
                         system: system,
-                        tools: tools
+                        tools: tools,
+                        requestId: requestId
                     )
 
                     let bodyData = try JSONEncoder().encode(payload)
                     var request = try self.createRequest(path: "/chat", method: "POST", body: bodyData)
+                    if let requestId, !requestId.isEmpty {
+                        request.setValue(requestId, forHTTPHeaderField: "X-Request-ID")
+                    }
                     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
                     request.timeoutInterval = 60
 
@@ -232,7 +238,8 @@ public class BridgeClient: ObservableObject {
                             let output = ChatStreamChunk(
                                 content: chunk.content,
                                 toolCalls: chunk.toolCalls,
-                                done: chunk.done
+                                done: chunk.done,
+                                requestId: chunk.requestId
                             )
                             continuation.yield(output)
                         }
