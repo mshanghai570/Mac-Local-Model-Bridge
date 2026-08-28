@@ -125,10 +125,10 @@ public class ChatViewModel: ObservableObject {
     ) {
         #if DEBUG
         let manifest = messages.enumerated().map { index, message in
-            "\(index):\(message.role.rawValue):\(message.content.count):\(traceFingerprint(message.content))"
+            "\(index):\(message.role.rawValue):\(message.content.count):\(self.traceFingerprint(message.content))"
         }.joined(separator: ",")
         Self.inferenceTraceLogger.notice(
-            "INFERENCE_TRACE request_id=\(requestId, privacy: .public) boundary=ios_request messages=\(manifest, privacy: .public) system_chars=\(system.count, privacy: .public) system_sha256_8=\(traceFingerprint(system), privacy: .public)"
+            "INFERENCE_TRACE request_id=\(requestId, privacy: .public) boundary=ios_request messages=\(manifest, privacy: .public) system_chars=\(system.count, privacy: .public) system_sha256_8=\(self.traceFingerprint(system), privacy: .public)"
         )
         #endif
     }
@@ -137,7 +137,7 @@ public class ChatViewModel: ObservableObject {
         #if DEBUG
         let receivedId = gatewayRequestId ?? "none"
         Self.inferenceTraceLogger.notice(
-            "INFERENCE_TRACE request_id=\(requestId, privacy: .public) boundary=ios_displayed_response gateway_request_id=\(receivedId, privacy: .public) characters=\(content.count, privacy: .public) sha256_8=\(traceFingerprint(content), privacy: .public)"
+            "INFERENCE_TRACE request_id=\(requestId, privacy: .public) boundary=ios_displayed_response gateway_request_id=\(receivedId, privacy: .public) characters=\(content.count, privacy: .public) sha256_8=\(self.traceFingerprint(content), privacy: .public)"
         )
         #endif
     }
