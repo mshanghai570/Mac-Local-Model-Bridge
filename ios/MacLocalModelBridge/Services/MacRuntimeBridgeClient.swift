@@ -120,6 +120,7 @@ public final class MacRuntimeBridgeClient {
     private let session: URLSession
     private let settings: SettingsManager
     private let chunkBytes = 4 * 1024 * 1024
+    private static let hashChunkBytes = 4 * 1024 * 1024
     private let maxChunkAttempts = 3
     /// GGUF hashing and final integrity verification can legitimately exceed the
     /// generic API timeout on an older iPhone, slow Wi-Fi, or large model.
@@ -282,7 +283,7 @@ public final class MacRuntimeBridgeClient {
         defer { try? handle.close() }
         var hasher = SHA256()
         while true {
-            guard let chunk = try handle.read(upToCount: chunkBytes), !chunk.isEmpty else { break }
+            guard let chunk = try handle.read(upToCount: Self.hashChunkBytes), !chunk.isEmpty else { break }
             hasher.update(data: chunk)
         }
         return hasher.finalize().map { String(format: "%02x", $0) }.joined()
